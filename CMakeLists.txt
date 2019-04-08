@@ -41,7 +41,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp obindex2)
 
 # Other packages
 find_package(OpenCV REQUIRED) # OpenCV
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost REQUIRED COMPONENTS system filesystem date_time thread)
 find_package(OpenMP REQUIRED) # OpenMP
 if (OPENMP_FOUND)
   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -73,6 +73,16 @@ add_library(lcdetector
             include/ibow-lcd/island.h
             src/lcdetector.cc)
 target_link_libraries(lcdetector
+                      ${catkin_LIBRARIES}
+                      ${OpenCV_LIBRARIES}
+                      ${Boost_LIBRARIES})
+
+#Distributed use only
+add_executable(ibowLCD_dist
+               src/mainAgent.cc
+               src/Agent.cc
+               src/LoopCloserMulti.cc)
+target_link_libraries(ibowLCD_dist 
                       ${catkin_LIBRARIES}
                       ${OpenCV_LIBRARIES}
                       ${Boost_LIBRARIES})
