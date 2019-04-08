@@ -6,7 +6,7 @@
 #include <opencv2/xfeatures2d.hpp>
 
 #include "obindex2/binary_index.h"
-#include "ibow-lcd/LoopCloserMulti.h"
+#include "ibow-lcd/LCDetectorMultiCentralized.h"
 #include "ibow-lcd/Agent.h"
 
 #include <boost/thread.hpp>
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
   std::cout << "Importing files..." << std::endl;
   std::vector<std::string> filenames; //import images
   getFilenames(argv[1], &filenames);
-  unsigned agents = 3;
+  unsigned agents = 6;
 
   /******************Previous Code****************************/
   // unsigned nImages = filenames.size();
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   std::cout << "Total number of images to import " << filenames.size() << std::endl;
   obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, true);
   std::cout << "Initiallizing central agents manager..." << std::endl;
-  LoopCloserMulti LCM(agents, filenames, &centralOb);
+  LCDetectorMultiCentralized LCM(agents, filenames, &centralOb);
   std::cout << "Initialllizing agents..." << std::endl;
   LCM.process();
 

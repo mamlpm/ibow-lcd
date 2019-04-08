@@ -1,6 +1,6 @@
 #include "ibow-lcd/Agent.h"
 
-Agent::Agent(LoopCloserMulti* centralCerv,
+Agent::Agent(LCDetectorMultiCentralized* centralCerv,
              std::vector<std::string> &flNames,
              boost::mutex *locker,
              std::vector<std::pair<unsigned, cv::Mat>> *outPut,

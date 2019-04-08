@@ -1,5 +1,5 @@
-#ifndef LIB_INCLUDE_IBOW_LCD_LOOP_CLOSER_MULTI_H_
-#define LIB_INCLUDE_IBOW_LCD_LOOP_CLOSER_MULTI_H_
+#ifndef LIB_INCLUDE_IBOW_LC_DETECTOR_MULTI_CENTRALIZED_H_
+#define LIB_INCLUDE_IBOW_LC_DETECTOR_MULTI_CENTRALIZED_H_
 #include "obindex2/binary_index.h"
 #include "ibow-lcd/Agent.h"
 #include <iostream>
@@ -13,10 +13,10 @@
 
 class Agent;
 
-class LoopCloserMulti
+class LCDetectorMultiCentralized
 {
   public:
-    LoopCloserMulti(unsigned agents,
+    LCDetectorMultiCentralized(unsigned agents,
                     std::vector<std::string> &imageFiles,
                     obindex2::ImageIndex* centralOb);
     void process();

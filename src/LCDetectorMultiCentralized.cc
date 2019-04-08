@@ -1,6 +1,6 @@
-#include "ibow-lcd/LoopCloserMulti.h"
+#include "ibow-lcd/LCDetectorMultiCentralized.h"
 
-LoopCloserMulti::LoopCloserMulti(unsigned agents,
+LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
                                  std::vector<std::string> &imageFiles,
                                  obindex2::ImageIndex *centralOb)
 {
@@ -34,7 +34,7 @@ LoopCloserMulti::LoopCloserMulti(unsigned agents,
     }
 }
 
-void LoopCloserMulti::process()
+void LCDetectorMultiCentralized::process()
 {
 
     // for (unsigned i = 0; i < agents_; i++)
@@ -64,7 +64,7 @@ void LoopCloserMulti::process()
     }
 }
 
-unsigned LoopCloserMulti::displayImages()
+unsigned LCDetectorMultiCentralized::displayImages()
 {
     unsigned e = 1;
     for (unsigned i = 0; i < outP_.size(); i++)

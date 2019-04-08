@@ -2,7 +2,7 @@
 #define LIB_INCLUDE_IBOW_LCD_AGENT_H_
 
 // #include "obindex2/binary_index.h"
-#include "ibow-lcd/LoopCloserMulti.h"
+#include "ibow-lcd/LCDetectorMultiCentralized.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -12,12 +12,12 @@
 #include <boost/chrono.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-class LoopCloserMulti;
+class LCDetectorMultiCentralized;
 
 class Agent
 {
 public:
-  Agent(LoopCloserMulti* centralCerv,
+  Agent(LCDetectorMultiCentralized* centralCerv,
         std::vector<std::string> &fileNames,
         boost::mutex *locker,
         std::vector<std::pair<unsigned, cv::Mat>> *outPut,
@@ -26,7 +26,7 @@ public:
   void run();
 
 private:
-  LoopCloserMulti* centr_;                  //central server
+  LCDetectorMultiCentralized* centr_;                  //central server
   std::vector<std::string> fileNames_;      //files which contain the images waiting to be processed
   std::vector<cv::KeyPoint> prevKeyPoints_; //keypoints seen on the previous image
   cv::Mat previousImage_;
