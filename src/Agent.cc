@@ -54,9 +54,10 @@ void Agent::run()
                 
                 std::vector<cv::KeyPoint> matchedKeyPoints;
                 locker_->lock();
-                centr_->processImage(agentId_, j, gImageId_,kpoints, matchedKeyPoints, 0);
+                centr_->processImage(agentId_, j, gImageId_, descript, kpoints, matchedKeyPoints, 0);
                 locker_->unlock();
 
+            
             }
         }
         else
@@ -97,7 +98,7 @@ void Agent::run()
 
                 /*****************************************/
                 locker_->lock();
-                centr_->processImage(agentId_, j, gImageId_,kpoints, matchedKeyPoints, 1);
+                centr_->processImage(agentId_, j, gImageId_, descript, kpoints, matchedKeyPoints, 1);
                 locker_->unlock();
 
                 /*****************************************/

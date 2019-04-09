@@ -49,6 +49,7 @@ void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
 void LCDetectorMultiCentralized::processImage(unsigned agentN,
                                               unsigned imageId,
                                               unsigned gImageID,
+                                              const cv::Mat &descs,
                                               std::vector<cv::KeyPoint> keyPoints,
                                               std::vector<cv::KeyPoint> stableKeyPoints,
                                               bool lookForLoop)
@@ -56,6 +57,24 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
     std::cout << "This is central server "
               << "and now I should be processing agent's " << agentN << " "
               << imageId << " which is the " << gImageID << " processed image" << std::endl;
+    std::vector<std::vector<cv::DMatch>> mtchs;
+    centralOb_->searchDescriptors(descs,
+                                  &mtchs);
+    std::vector<cv::DMatch> usableMatches;
+    filterCandidates(mtchs, &usableMatches);
+}
+
+void LCDetectorMultiCentralized::filterCandidates(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
+                                                  std::vector<cv::DMatch> *filteredCandidates)
+{
+    filteredCandidates->clear();
+    for (unsigned i = 0; i < candidatesToFilter.size(); i++)
+    {
+        if (candidatesToFilter[i][0].distance < 0.8 * candidatesToFilter[i][1].distance)
+        {
+            filteredCandidates->push_back(candidatesToFilter[i][0]);
+        }
+    }
 }
 
 // unsigned LCDetectorMultiCentralized::displayImages()

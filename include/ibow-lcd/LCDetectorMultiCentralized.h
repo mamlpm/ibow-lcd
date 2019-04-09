@@ -1,6 +1,7 @@
 #ifndef LIB_INCLUDE_IBOW_LC_DETECTOR_MULTI_CENTRALIZED_H_
 #define LIB_INCLUDE_IBOW_LC_DETECTOR_MULTI_CENTRALIZED_H_
 #include "obindex2/binary_index.h"
+#include "ibow-lcd/island.h"
 #include "ibow-lcd/Agent.h"
 #include <iostream>
 #include <string>
@@ -22,9 +23,12 @@ public:
   void processImage(unsigned agentN,
                     unsigned imageId,
                     unsigned gImageId,
+                    const cv::Mat &descs,
                     std::vector<cv::KeyPoint> keyPoints,
                     std::vector<cv::KeyPoint> stableKeyPoints,
                     bool lookForLoop);
+  void filterCandidates (std::vector<std::vector<cv::DMatch>>& candidatesToFilter,
+                        std::vector<cv::DMatch>* filteredCandidates);
   // unsigned displayImages();
 
 private:
