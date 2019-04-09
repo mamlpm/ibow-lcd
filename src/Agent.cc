@@ -1,17 +1,16 @@
 #include "ibow-lcd/Agent.h"
 
-Agent::Agent(LCDetectorMultiCentralized* centralCerv,
+Agent::Agent(LCDetectorMultiCentralized *centralCerv,
              std::vector<std::string> &flNames,
              boost::mutex *locker,
-             std::vector<std::pair<unsigned, cv::Mat>> *outPut,
-             unsigned agentId)
+             unsigned agentId,
+             unsigned firstImageId)
 {
     centr_ = centralCerv;
     agentId_ = agentId;
     nImages_ = flNames.size();
     locker_ = locker;
-    outPut_ = outPut;
-    // imageId = imageId_;
+    gImageId_ = firstImageId;
     for (unsigned i = 0; i < flNames.size(); i++)
     {
         fileNames_.push_back(flNames[i]);
@@ -52,6 +51,12 @@ void Agent::run()
                 prevKeyPoints_ = kpoints;       //fill the previous key points vector
                 previousImage_ = importedImage; //update the last seen image
                 prevDescriptors_ = descript;    //Update previous seen descrpitors matrix
+                
+                std::vector<cv::KeyPoint> matchedKeyPoints;
+                locker_->lock();
+                centr_->processImage(agentId_, j, gImageId_,kpoints, matchedKeyPoints, 0);
+                locker_->unlock();
+
             }
         }
         else
@@ -65,7 +70,6 @@ void Agent::run()
 
             for (unsigned e = 0; e < foundMatches.size(); e++)
             {
-
                 if (foundMatches[e].size() > 1)
                 {
                     if (foundMatches[e][0].distance < foundMatches[e][1].distance * 0.8)
@@ -84,8 +88,6 @@ void Agent::run()
                     descript.row(matchedDescriptors[i].queryIdx).copyTo(foundDescriptors.row(i));
                 }
 
-                cv::Mat outP;
-
                 /*****************Uncomment to display results ***********************/
                 // locker_->lock();
                 // cv::drawMatches(importedImage, kpoints, previousImage_, prevKeyPoints_, matchedDescriptors, outP);
@@ -93,18 +95,19 @@ void Agent::run()
                 // locker_->unlock();
                 /***************************************/
 
-                /*****************************************
-             
-                Ahora aqui tendriamos que llamar a obindex
+                /*****************************************/
+                locker_->lock();
+                centr_->processImage(agentId_, j, gImageId_,kpoints, matchedKeyPoints, 1);
+                locker_->unlock();
 
-                *****************************************/
+                /*****************************************/
             }
 
             prevKeyPoints_.clear();         //clean the previous key points vector
             prevKeyPoints_ = kpoints;       //fill the previous key points vector
             previousImage_ = importedImage; //update the last seen image
             prevDescriptors_ = descript;    //Update previous seen descrpitors matrix
-
         }
+        gImageId_++;
     }
 }

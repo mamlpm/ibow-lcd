@@ -17,24 +17,23 @@ class LCDetectorMultiCentralized;
 class Agent
 {
 public:
-  Agent(LCDetectorMultiCentralized* centralCerv,
+  Agent(LCDetectorMultiCentralized *centralCerv,
         std::vector<std::string> &fileNames,
         boost::mutex *locker,
-        std::vector<std::pair<unsigned, cv::Mat>> *outPut,
-        unsigned agentId);
+        unsigned agentId,
+        unsigned firstImageId);
   unsigned getId();
   void run();
 
 private:
-  LCDetectorMultiCentralized* centr_;                  //central server
+  LCDetectorMultiCentralized *centr_;       //central server
   std::vector<std::string> fileNames_;      //files which contain the images waiting to be processed
   std::vector<cv::KeyPoint> prevKeyPoints_; //keypoints seen on the previous image
   cv::Mat previousImage_;
   unsigned agentId_;
   unsigned nImages_;
   cv::Mat prevDescriptors_;
-  boost::mutex* locker_;
-  std::vector<std::pair<unsigned, cv::Mat>> *outPut_;
-  // unsigned* imageId_;
+  boost::mutex *locker_;
+  unsigned gImageId_;
 };
 #endif

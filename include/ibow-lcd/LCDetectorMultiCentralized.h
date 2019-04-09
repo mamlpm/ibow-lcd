@@ -15,21 +15,25 @@ class Agent;
 
 class LCDetectorMultiCentralized
 {
-  public:
-    LCDetectorMultiCentralized(unsigned agents,
-                    std::vector<std::string> &imageFiles,
-                    obindex2::ImageIndex* centralOb);
-    void process();
-    unsigned displayImages();
+public:
+  LCDetectorMultiCentralized(unsigned agents,
+                             obindex2::ImageIndex *centralOb);
+  void process(std::vector<std::string> &imageFiles);
+  void processImage(unsigned agentN,
+                    unsigned imageId,
+                    unsigned gImageId,
+                    std::vector<cv::KeyPoint> keyPoints,
+                    std::vector<cv::KeyPoint> stableKeyPoints,
+                    bool lookForLoop);
+  // unsigned displayImages();
 
-  private:
-    unsigned imagesPerAgent_;
-    unsigned agents_;
-    std::vector<std::vector<std::string>> filesPerAgent_;
-    std::vector<boost::thread *> agentObjects_;
-    std::vector<std::pair<unsigned, cv::Mat>> outP_;//for debugging porpuses
-    unsigned totalNumberOfImages_;
-    boost::mutex locker_;
-    obindex2::ImageIndex* centralOb_;
+private:
+  unsigned imagesPerAgent_;
+  unsigned agents_;
+  std::vector<std::vector<std::string>> filesPerAgent_;
+  boost::thread_group agentSim_;
+  unsigned totalNumberOfImages_;
+  boost::mutex locker_;
+  obindex2::ImageIndex *centralOb_;
 };
 #endif
