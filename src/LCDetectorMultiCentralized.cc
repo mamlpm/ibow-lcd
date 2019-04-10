@@ -1,10 +1,12 @@
 #include "ibow-lcd/LCDetectorMultiCentralized.h"
 
 LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
-                                                       obindex2::ImageIndex *centralOb)
+                                                       obindex2::ImageIndex *centralOb,
+                                                       const unsigned p)
 {
     agents_ = agents;
     centralOb_ = centralOb;
+    p_ = p;
 }
 
 void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
@@ -62,6 +64,8 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                                   &mtchs);
     std::vector<cv::DMatch> usableMatches;
     filterCandidates(mtchs, &usableMatches);
+    std::unordered_map <unsigned, centralOb_ -> ImageMatch> iMatch;
+    centralOb_ -> searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, 0, p_);
 }
 
 void LCDetectorMultiCentralized::filterCandidates(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
