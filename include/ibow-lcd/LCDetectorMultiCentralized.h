@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <opencv2/xfeatures2d.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
@@ -28,9 +29,11 @@ public:
                     std::vector<cv::KeyPoint> keyPoints,
                     std::vector<cv::KeyPoint> stableKeyPoints,
                     bool lookForLoop);
-  void filterCandidates (std::vector<std::vector<cv::DMatch>>& candidatesToFilter,
-                        std::vector<cv::DMatch>* filteredCandidates);
-  // unsigned displayImages();
+  void filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
+                     std::vector<cv::DMatch> *filteredCandidates);
+  void filterCandidates(
+      const std::unordered_map<unsigned, obindex2::ImageMatch> &image_matches,
+      std::unordered_map<unsigned, obindex2::ImageMatch> *image_matches_filt);
 
 private:
   unsigned imagesPerAgent_;

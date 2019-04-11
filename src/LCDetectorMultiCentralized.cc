@@ -63,13 +63,13 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
     centralOb_->searchDescriptors(descs,
                                   &mtchs);
     std::vector<cv::DMatch> usableMatches;
-    filterCandidates(mtchs, &usableMatches);
-    std::unordered_map <unsigned, obindex2::ImageMatch> iMatch;
-    centralOb_ -> searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, 0, p_);
+    filterMatches(mtchs, &usableMatches);
+    std::unordered_map<unsigned, obindex2::ImageMatch> iMatch;
+    centralOb_->searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, 0, p_);
 }
 
-void LCDetectorMultiCentralized::filterCandidates(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
-                                                  std::vector<cv::DMatch> *filteredCandidates)
+void LCDetectorMultiCentralized::filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
+                                               std::vector<cv::DMatch> *filteredCandidates)
 {
     filteredCandidates->clear();
     for (unsigned i = 0; i < candidatesToFilter.size(); i++)
@@ -81,18 +81,45 @@ void LCDetectorMultiCentralized::filterCandidates(std::vector<std::vector<cv::DM
     }
 }
 
-// unsigned LCDetectorMultiCentralized::displayImages()
-// {
-//     unsigned e = 1;
-//     for (unsigned i = 0; i < outP_.size(); i++)
-//     {
-//         cv::imshow(std::to_string(outP_[i].first), outP_[i].second);
-//         cv::waitKey(5);
-//         usleep(100000);
-//         // e++;
-//         // std::cout << e << std::endl;
-//     }
-//     e = outP_.size();
-//     outP_.clear();
-//     return e;
-// }
+void LCDetectorMultiCentralized::filterCandidates(
+    const std::unordered_map<unsigned, obindex2::ImageMatch> &image_matches,
+    std::unordered_map<unsigned, obindex2::ImageMatch> *image_matches_filt)
+{
+    image_matches_filt->clear();
+
+    std::vector <obindex2::ImageMatch> aux;
+    std::vector <double> aux1;
+    for (auto it = image_matches.begin(); it != image_matches.end(); it++)
+    {
+        aux.push_back(it->second);
+        aux1.push_back(aux[aux.size()-1].score);
+    }
+
+    auto aux2 = std::max_element(aux1.begin(), aux1.end());
+    double max_score = *aux2;
+
+    aux2 = std::min_element(aux1.begin(), aux1.end());
+    double min_score = *aux2;
+
+    for (auto i = image_matches.begin(); i != image_matches.end(); i++)
+    {
+        obindex2::ImageMatch match = i -> second;
+        // Computing the new score
+        double new_score = (match.score - min_score) /
+                           (max_score - min_score);
+        // Assessing if this image match is higher than a threshold
+        if (new_score > min_score_)
+        {
+            //obindex2::ImageMatch match = image_matches[i];
+            // match.score = new_score;
+            // obindex2::ImageMatch aux3 = i -> second;
+            // match.image_id = aux3.image_id;
+            // match.score = aux3.score;
+            image_matches_filt->insert({match.image_id, match});
+        }
+        else
+        {
+            break;
+        }
+    }
+}
