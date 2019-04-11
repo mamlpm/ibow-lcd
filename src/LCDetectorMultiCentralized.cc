@@ -2,11 +2,13 @@
 
 LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
                                                        obindex2::ImageIndex *centralOb,
-                                                       unsigned p)
+                                                       unsigned p,
+                                                       double mScore)
 {
     agents_ = agents;
     centralOb_ = centralOb;
     p_ = p;
+    min_score_ = mScore;
 }
 
 void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)

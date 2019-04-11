@@ -20,7 +20,8 @@ class LCDetectorMultiCentralized
 public:
   LCDetectorMultiCentralized(unsigned agents,
                              obindex2::ImageIndex *centralOb,
-                             unsigned p);
+                             unsigned p,
+                             double mScore);
   void process(std::vector<std::string> &imageFiles);
   void processImage(unsigned agentN,
                     unsigned imageId,
@@ -44,5 +45,6 @@ private:
   boost::mutex locker_;
   obindex2::ImageIndex *centralOb_;
   unsigned p_;
+  double min_score_;
 };
 #endif

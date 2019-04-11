@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   std::cout << "Total number of images to import " << filenames.size() << std::endl;
   obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, true);
   std::cout << "Initiallizing central agents manager..." << std::endl;
-  LCDetectorMultiCentralized LCM(agents, &centralOb, 10);
+  LCDetectorMultiCentralized LCM(agents, &centralOb, 10, 0.3);
   std::cout << "Initialllizing agents..." << std::endl;
   LCM.process(filenames);
 
