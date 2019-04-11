@@ -2,7 +2,7 @@
 
 LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
                                                        obindex2::ImageIndex *centralOb,
-                                                       const unsigned p)
+                                                       unsigned p)
 {
     agents_ = agents;
     centralOb_ = centralOb;
@@ -64,7 +64,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                                   &mtchs);
     std::vector<cv::DMatch> usableMatches;
     filterCandidates(mtchs, &usableMatches);
-    std::unordered_map <unsigned, centralOb_ -> ImageMatch> iMatch;
+    std::unordered_map <unsigned, obindex2::ImageMatch> iMatch;
     centralOb_ -> searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, 0, p_);
 }
 
