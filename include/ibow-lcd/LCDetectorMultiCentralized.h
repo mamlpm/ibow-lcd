@@ -36,7 +36,14 @@ public:
       const std::vector<obindex2::ImageMatch> &image_matches,
       std::vector<obindex2::ImageMatch> *image_matches_filt);
 
-static bool compareByScore (const obindex2::ImageMatch& a, const obindex2::ImageMatch& b);
+  static bool compareByScore(const obindex2::ImageMatch &a, const obindex2::ImageMatch &b);
+
+  void addImage(const unsigned image_id,
+                const unsigned globalImgId,
+                const unsigned agentId,
+                const std::vector<cv::KeyPoint> &kps,
+                const cv::Mat &descs,
+                const std::vector<cv::DMatch> mtchs);
 
 private:
   unsigned imagesPerAgent_;

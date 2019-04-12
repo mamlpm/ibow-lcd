@@ -62,35 +62,47 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
     std::cout << "This is central server "
               << "and now I should be processing agent's " << agentN << " "
               << imageId << " which is the " << gImageID << " processed image" << std::endl;
-    std::vector<std::vector<cv::DMatch>> mtchs;
-    centralOb_->searchDescriptors(descs,
-                                  &mtchs);
-    std::vector<cv::DMatch> usableMatches;
-    filterMatches(mtchs, &usableMatches);
-    std::unordered_map<unsigned, obindex2::ImageMatch> iMatch;
-    centralOb_->searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, p_, imageId);
-    std::vector<obindex2::ImageMatch> iMatchVect;
-    for (auto it = iMatch.begin(); it != iMatch.end(); it++)
+    if (lookForLoop)
     {
-        iMatchVect.push_back(it->second);
+        std::vector<std::vector<cv::DMatch>> mtchs;
+        centralOb_->searchDescriptors(descs,
+                                      &mtchs);
+        std::vector<cv::DMatch> usableMatches;
+        std::cout << "Hola " << std::endl;
+        filterMatches(mtchs, &usableMatches);
+        std::unordered_map<unsigned, obindex2::ImageMatch> iMatch;
+        centralOb_->searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, p_, imageId);
+        std::vector<obindex2::ImageMatch> iMatchVect;
+        for (auto it = iMatch.begin(); it != iMatch.end(); it++)
+        {
+            iMatchVect.push_back(it->second);
+        }
+        sort(iMatchVect.begin(), iMatchVect.end(), compareByScore);
+        std::vector<obindex2::ImageMatch> iMatchFilt;
+        filterCandidates(iMatchVect, &iMatchFilt);
     }
-    sort(iMatchVect.begin(), iMatchVect.end(), compareByScore);
-    std::vector<obindex2::ImageMatch> iMatchFilt;
-    filterCandidates(iMatchVect, &iMatchFilt);    
+    //Llamar metodo addImage (local)
     locker_.unlock();
 }
 
 void LCDetectorMultiCentralized::filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
                                                std::vector<cv::DMatch> *filteredCandidates)
 {
+    // std::cout << "Hola 1" << std::endl;
     filteredCandidates->clear();
+    // std::cout << "Hola 2" << std::endl;
     for (unsigned i = 0; i < candidatesToFilter.size(); i++)
     {
+        // std::cout << " size: " << candidatesToFilter.size() <<  std::endl;
+
+        // std::cout << "Hola 3" << std::endl;
         if (candidatesToFilter[i][0].distance < 0.8 * candidatesToFilter[i][1].distance)
         {
+            // std::cout << "Hola 4" << std::endl;
             filteredCandidates->push_back(candidatesToFilter[i][0]);
         }
     }
+    // std::cout << "Hola 5" << std::endl;
 }
 
 void LCDetectorMultiCentralized::filterCandidates(
@@ -125,4 +137,34 @@ bool LCDetectorMultiCentralized::compareByScore(const obindex2::ImageMatch &a,
                                                 const obindex2::ImageMatch &b)
 {
     return a.score > b.score;
+}
+
+void LCDetectorMultiCentralized::addImage(const unsigned image_id,
+                                          const unsigned globalImgId,
+                                          const unsigned agentId,
+                                          const std::vector<cv::KeyPoint> &kps,
+                                          const cv::Mat &descs,
+                                          const std::vector<cv::DMatch> mtchs)
+{
+    if (centralOb_->numImages() == 0)
+    {
+        // This is the first image that is inserted into the index
+        centralOb_->addvWords(image_id, globalImgId, agentId, kps, descs);
+    }
+    else
+    {
+        // We have to search the descriptor and filter them before adding descs
+        // Matching the descriptors
+        std::vector<std::vector<cv::DMatch>> matches_feats;
+
+        // Searching the query descriptors against the features
+        centralOb_->searchDescriptors(descs, &matches_feats, 2, 64);
+
+        // Filtering matches according to the ratio test
+        std::vector<cv::DMatch> matches;
+        filterMatches(matches_feats, &matches);
+
+        // Finally, we add the image taking into account the correct matchings
+        centralOb_->addvWords(image_id, globalImgId, agentId, kps, descs, matches);
+    }
 }
