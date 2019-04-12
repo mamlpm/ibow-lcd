@@ -33,8 +33,10 @@ public:
   void filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
                      std::vector<cv::DMatch> *filteredCandidates);
   void filterCandidates(
-      const std::unordered_map<unsigned, obindex2::ImageMatch> &image_matches,
-      std::unordered_map<unsigned, obindex2::ImageMatch> *image_matches_filt);
+      const std::vector<obindex2::ImageMatch> &image_matches,
+      std::vector<obindex2::ImageMatch> *image_matches_filt);
+
+static bool compareByScore (const obindex2::ImageMatch& a, const obindex2::ImageMatch& b);
 
 private:
   unsigned imagesPerAgent_;

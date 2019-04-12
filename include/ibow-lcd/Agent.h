@@ -19,7 +19,6 @@ class Agent
 public:
   Agent(LCDetectorMultiCentralized *centralCerv,
         std::vector<std::string> &fileNames,
-        boost::mutex *locker,
         unsigned agentId,
         unsigned firstImageId);
   unsigned getId();
@@ -33,7 +32,7 @@ private:
   unsigned agentId_;
   unsigned nImages_;
   cv::Mat prevDescriptors_;
-  boost::mutex *locker_;
+  boost::mutex locker_;
   unsigned gImageId_;
 };
 #endif

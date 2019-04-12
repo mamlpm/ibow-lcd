@@ -2,14 +2,12 @@
 
 Agent::Agent(LCDetectorMultiCentralized *centralCerv,
              std::vector<std::string> &flNames,
-             boost::mutex *locker,
              unsigned agentId,
              unsigned firstImageId)
 {
     centr_ = centralCerv;
     agentId_ = agentId;
     nImages_ = flNames.size();
-    locker_ = locker;
     gImageId_ = firstImageId;
     for (unsigned i = 0; i < flNames.size(); i++)
     {
@@ -33,9 +31,9 @@ void Agent::run()
 
         std::vector<cv::KeyPoint> kpoints;
         cv::Mat importedImage = cv::imread(fileNames_[j]); //import image to read
-        locker_->lock();
+        locker_.lock();
         std::cout << "This is agent " << agentId_ << " processing image " << fileNames_[j] << std::endl;
-        locker_->unlock();
+        locker_.unlock();
         cv::Mat descript;
 
         detector->detect(importedImage, kpoints);              //detect all key points
@@ -53,9 +51,7 @@ void Agent::run()
                 prevDescriptors_ = descript;    //Update previous seen descrpitors matrix
                 
                 std::vector<cv::KeyPoint> matchedKeyPoints;
-                locker_->lock();
                 centr_->processImage(agentId_, j, gImageId_, descript, kpoints, matchedKeyPoints, 0);
-                locker_->unlock();
 
             
             }
@@ -97,9 +93,7 @@ void Agent::run()
                 /***************************************/
 
                 /*****************************************/
-                locker_->lock();
                 centr_->processImage(agentId_, j, gImageId_, descript, kpoints, matchedKeyPoints, 1);
-                locker_->unlock();
 
                 /*****************************************/
             }

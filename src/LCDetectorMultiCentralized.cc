@@ -43,7 +43,7 @@ void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
 
     for (unsigned i = 0; i < filesPerAgent_.size(); i++)
     {
-        Agent *a = new Agent(this, filesPerAgent_[i], &locker_, i, firstImage[i]);
+        Agent *a = new Agent(this, filesPerAgent_[i], i, firstImage[i]);
         agentSim_.create_thread(boost::bind(&Agent::run, a));
     }
 
@@ -58,6 +58,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                                               std::vector<cv::KeyPoint> stableKeyPoints,
                                               bool lookForLoop)
 {
+    locker_.lock();
     std::cout << "This is central server "
               << "and now I should be processing agent's " << agentN << " "
               << imageId << " which is the " << gImageID << " processed image" << std::endl;
@@ -68,9 +69,15 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
     filterMatches(mtchs, &usableMatches);
     std::unordered_map<unsigned, obindex2::ImageMatch> iMatch;
     centralOb_->searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, 0, p_, imageId);
-    std::unordered_map<unsigned, obindex2::ImageMatch> iMatchFilt;
-    filterCandidates (iMatch, &iMatchFilt);
-
+    std::vector<obindex2::ImageMatch> iMatchVect;
+    for (auto it = iMatch.begin(); it != iMatch.end(); it++)
+    {
+        iMatchVect.push_back(it->second);
+    }
+    sort(iMatchVect.begin(), iMatchVect.end(), compareByScore);
+    std::vector<obindex2::ImageMatch> iMatchFilt;
+    filterCandidates(iMatchVect, &iMatchFilt);    
+    locker_.unlock();
 }
 
 void LCDetectorMultiCentralized::filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
@@ -87,44 +94,35 @@ void LCDetectorMultiCentralized::filterMatches(std::vector<std::vector<cv::DMatc
 }
 
 void LCDetectorMultiCentralized::filterCandidates(
-    const std::unordered_map<unsigned, obindex2::ImageMatch> &image_matches,
-    std::unordered_map<unsigned, obindex2::ImageMatch> *image_matches_filt)
+    const std::vector<obindex2::ImageMatch> &image_matches,
+    std::vector<obindex2::ImageMatch> *image_matches_filt)
 {
     image_matches_filt->clear();
 
-    std::vector <obindex2::ImageMatch> aux;
-    std::vector <double> aux1;
-    for (auto it = image_matches.begin(); it != image_matches.end(); it++)
+    double max_score = image_matches[0].score;
+    double min_score = image_matches[image_matches.size() - 1].score;
+
+    for (unsigned i = 0; i < image_matches.size(); i++)
     {
-        aux.push_back(it->second);
-        aux1.push_back(aux[aux.size()-1].score);
-    }
-
-    auto aux2 = std::max_element(aux1.begin(), aux1.end());
-    double max_score = *aux2;
-
-    aux2 = std::min_element(aux1.begin(), aux1.end());
-    double min_score = *aux2;
-
-    for (auto i = image_matches.begin(); i != image_matches.end(); i++)
-    {
-        obindex2::ImageMatch match = i -> second;
         // Computing the new score
-        double new_score = (match.score - min_score) /
+        double new_score = (image_matches[i].score - min_score) /
                            (max_score - min_score);
         // Assessing if this image match is higher than a threshold
         if (new_score > min_score_)
         {
-            //obindex2::ImageMatch match = image_matches[i];
-            // match.score = new_score;
-            // obindex2::ImageMatch aux3 = i -> second;
-            // match.image_id = aux3.image_id;
-            // match.score = aux3.score;
-            image_matches_filt->insert({match.image_id, match});
+            obindex2::ImageMatch match = image_matches[i];
+            match.score = new_score;
+            image_matches_filt->push_back(match);
         }
         else
         {
             break;
         }
     }
+}
+
+bool LCDetectorMultiCentralized::compareByScore(const obindex2::ImageMatch &a,
+                                                const obindex2::ImageMatch &b)
+{
+    return a.score > b.score;
 }
