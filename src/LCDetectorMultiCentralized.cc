@@ -54,97 +54,97 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                                               unsigned imageId,
                                               unsigned gImageID,
                                               const cv::Mat &descs,
+                                              const cv::Mat &stableDescs,
                                               std::vector<cv::KeyPoint> keyPoints,
                                               std::vector<cv::KeyPoint> stableKeyPoints,
                                               bool lookForLoop)
 {
     locker_.lock();
-    std::cout << "This is central server "
-              << "and now I should be processing agent's " << agentN << " "
-              << imageId << " which is the " << gImageID << " processed image" << std::endl;
+    std::cout << "Processing image " << imageId << " seen by agent " << agentN << std::endl; 
     if (lookForLoop)
     {
         std::vector<std::vector<cv::DMatch>> mtchs;
         centralOb_->searchDescriptors(descs,
                                       &mtchs);
         std::vector<cv::DMatch> usableMatches;
-        std::cout << "Hola " << std::endl;
         filterMatches(mtchs, &usableMatches);
         std::unordered_map<unsigned, obindex2::ImageMatch> iMatch;
-        centralOb_->searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, p_, imageId);
         std::vector<obindex2::ImageMatch> iMatchVect;
+        centralOb_->searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, p_, imageId);
         for (auto it = iMatch.begin(); it != iMatch.end(); it++)
         {
             iMatchVect.push_back(it->second);
         }
         sort(iMatchVect.begin(), iMatchVect.end(), compareByScore);
+        if (iMatchVect.size() > 2)
+        {
+            std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[0].agentId << " image " << iMatchVect[0].image_id << " scoring " << iMatchVect[0].score << std::endl;
+            std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[1].agentId << " image " << iMatchVect[1].image_id << " scoring " << iMatchVect[1].score << std::endl;
+            std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[2].agentId << " image " << iMatchVect[2].image_id << " scoring " << iMatchVect[2].score << std::endl;
+        }else
+        {
+            for (unsigned i = 0; i < iMatchVect.size(); i++)
+            {
+                std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[i].agentId << " image " << iMatchVect[i].image_id << " scoring " << iMatchVect[i].score << std::endl;
+            }
+        }
+        
+
         std::vector<obindex2::ImageMatch> iMatchFilt;
         filterCandidates(iMatchVect, &iMatchFilt);
     }
-    //Llamar metodo addImage (local)
+    addImage(imageId, gImageID, agentN, stableKeyPoints, stableDescs);
     locker_.unlock();
 }
 
 void LCDetectorMultiCentralized::filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
                                                std::vector<cv::DMatch> *filteredCandidates)
 {
-    // std::cout << "Hola 1" << std::endl;
     filteredCandidates->clear();
-    // std::cout << "Hola 2" << std::endl;
     for (unsigned i = 0; i < candidatesToFilter.size(); i++)
     {
-        // std::cout << " size: " << candidatesToFilter.size() <<  std::endl;
-
-        // std::cout << "Hola 3" << std::endl;
         if (candidatesToFilter[i][0].distance < 0.8 * candidatesToFilter[i][1].distance)
         {
-            // std::cout << "Hola 4" << std::endl;
             filteredCandidates->push_back(candidatesToFilter[i][0]);
         }
     }
-    // std::cout << "Hola 5" << std::endl;
 }
 
 void LCDetectorMultiCentralized::filterCandidates(
     const std::vector<obindex2::ImageMatch> &image_matches,
     std::vector<obindex2::ImageMatch> *image_matches_filt)
 {
-    image_matches_filt->clear();
-
-    double max_score = image_matches[0].score;
-    double min_score = image_matches[image_matches.size() - 1].score;
-
-    for (unsigned i = 0; i < image_matches.size(); i++)
+    if (image_matches.size() > 0)
     {
-        // Computing the new score
-        double new_score = (image_matches[i].score - min_score) /
-                           (max_score - min_score);
-        // Assessing if this image match is higher than a threshold
-        if (new_score > min_score_)
+        image_matches_filt->clear();
+        double max_score = image_matches[0].score;
+        double min_score = image_matches[image_matches.size() - 1].score;
+
+        for (unsigned i = 0; i < image_matches.size(); i++)
         {
-            obindex2::ImageMatch match = image_matches[i];
-            match.score = new_score;
-            image_matches_filt->push_back(match);
-        }
-        else
-        {
-            break;
+            // Computing the new score
+            double new_score = (image_matches[i].score - min_score) /
+                               (max_score - min_score);
+            // Assessing if this image match is higher than a threshold
+            if (new_score > min_score_)
+            {
+                obindex2::ImageMatch match = image_matches[i];
+                match.score = new_score;
+                image_matches_filt->push_back(match);
+            }
+            else
+            {
+                break;
+            }
         }
     }
-}
-
-bool LCDetectorMultiCentralized::compareByScore(const obindex2::ImageMatch &a,
-                                                const obindex2::ImageMatch &b)
-{
-    return a.score > b.score;
 }
 
 void LCDetectorMultiCentralized::addImage(const unsigned image_id,
                                           const unsigned globalImgId,
                                           const unsigned agentId,
                                           const std::vector<cv::KeyPoint> &kps,
-                                          const cv::Mat &descs,
-                                          const std::vector<cv::DMatch> mtchs)
+                                          const cv::Mat &descs)
 {
     if (centralOb_->numImages() == 0)
     {
@@ -167,4 +167,10 @@ void LCDetectorMultiCentralized::addImage(const unsigned image_id,
         // Finally, we add the image taking into account the correct matchings
         centralOb_->addvWords(image_id, globalImgId, agentId, kps, descs, matches);
     }
+}
+
+bool LCDetectorMultiCentralized::compareByScore(const obindex2::ImageMatch &a,
+                                                const obindex2::ImageMatch &b)
+{
+    return a.score > b.score;
 }

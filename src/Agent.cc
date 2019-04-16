@@ -50,10 +50,7 @@ void Agent::run()
                 previousImage_ = importedImage; //update the last seen image
                 prevDescriptors_ = descript;    //Update previous seen descrpitors matrix
                 
-                std::vector<cv::KeyPoint> matchedKeyPoints;
-                centr_->processImage(agentId_, j, gImageId_, descript, kpoints, matchedKeyPoints, 0);
-
-            
+                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 0);            
             }
         }
         else
@@ -93,7 +90,7 @@ void Agent::run()
                 /***************************************/
 
                 /*****************************************/
-                centr_->processImage(agentId_, j, gImageId_, descript, kpoints, matchedKeyPoints, 1);
+                centr_->processImage(agentId_, j, gImageId_, descript, foundDescriptors, kpoints, matchedKeyPoints, 1);
 
                 /*****************************************/
             }

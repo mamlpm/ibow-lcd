@@ -27,6 +27,7 @@ public:
                     unsigned imageId,
                     unsigned gImageId,
                     const cv::Mat &descs,
+                    const cv::Mat &stableDescs,
                     std::vector<cv::KeyPoint> keyPoints,
                     std::vector<cv::KeyPoint> stableKeyPoints,
                     bool lookForLoop);
@@ -36,14 +37,12 @@ public:
       const std::vector<obindex2::ImageMatch> &image_matches,
       std::vector<obindex2::ImageMatch> *image_matches_filt);
 
-  static bool compareByScore(const obindex2::ImageMatch &a, const obindex2::ImageMatch &b);
-
   void addImage(const unsigned image_id,
                 const unsigned globalImgId,
                 const unsigned agentId,
                 const std::vector<cv::KeyPoint> &kps,
-                const cv::Mat &descs,
-                const std::vector<cv::DMatch> mtchs);
+                const cv::Mat &descs);
+  static bool compareByScore(const obindex2::ImageMatch &a, const obindex2::ImageMatch &b);
 
 private:
   unsigned imagesPerAgent_;
