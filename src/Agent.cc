@@ -3,12 +3,14 @@
 Agent::Agent(LCDetectorMultiCentralized *centralCerv,
              std::vector<std::string> &flNames,
              unsigned agentId,
-             unsigned firstImageId)
+             unsigned firstImageId,
+             std::unordered_map<unsigned, std::vector<obindex2::ImageMatch>> *fRes)
 {
     centr_ = centralCerv;
     agentId_ = agentId;
     nImages_ = flNames.size();
     gImageId_ = firstImageId;
+    fRes_ = fRes;
     for (unsigned i = 0; i < flNames.size(); i++)
     {
         fileNames_.push_back(flNames[i]);
@@ -31,9 +33,9 @@ void Agent::run()
 
         std::vector<cv::KeyPoint> kpoints;
         cv::Mat importedImage = cv::imread(fileNames_[j]); //import image to read
-        locker_.lock();
-        std::cout << "This is agent " << agentId_ << " processing image " << fileNames_[j] << std::endl;
-        locker_.unlock();
+        // locker_.lock();
+        // std::cout << "This is agent " << agentId_ << " processing image " << fileNames_[j] << std::endl;
+        // locker_.unlock();
         cv::Mat descript;
 
         detector->detect(importedImage, kpoints);              //detect all key points
@@ -49,8 +51,8 @@ void Agent::run()
                 prevKeyPoints_ = kpoints;       //fill the previous key points vector
                 previousImage_ = importedImage; //update the last seen image
                 prevDescriptors_ = descript;    //Update previous seen descrpitors matrix
-                
-                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 0);            
+
+                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 0, &res_);
             }
         }
         else
@@ -90,7 +92,7 @@ void Agent::run()
                 /***************************************/
 
                 /*****************************************/
-                centr_->processImage(agentId_, j, gImageId_, descript, foundDescriptors, kpoints, matchedKeyPoints, 1);
+                centr_->processImage(agentId_, j, gImageId_, descript, foundDescriptors, kpoints, matchedKeyPoints, 1, &res_);
 
                 /*****************************************/
             }
@@ -102,4 +104,5 @@ void Agent::run()
         }
         gImageId_++;
     }
+    fRes_->insert({agentId_, res_});
 }

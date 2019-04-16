@@ -21,7 +21,8 @@ public:
   LCDetectorMultiCentralized(unsigned agents,
                              obindex2::ImageIndex *centralOb,
                              unsigned p,
-                             double mScore);
+                             double mScore,
+                             std::unordered_map<unsigned, std::vector<obindex2::ImageMatch>> *fReslt);
   void process(std::vector<std::string> &imageFiles);
   void processImage(unsigned agentN,
                     unsigned imageId,
@@ -30,7 +31,8 @@ public:
                     const cv::Mat &stableDescs,
                     std::vector<cv::KeyPoint> keyPoints,
                     std::vector<cv::KeyPoint> stableKeyPoints,
-                    bool lookForLoop);
+                    bool lookForLoop,
+                    std::vector<obindex2::ImageMatch> *result);
   void filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
                      std::vector<cv::DMatch> *filteredCandidates);
   void filterCandidates(
@@ -54,5 +56,6 @@ private:
   obindex2::ImageIndex *centralOb_;
   unsigned p_;
   double min_score_;
+  std::unordered_map<unsigned, std::vector<obindex2::ImageMatch>> *fReslt_;
 };
 #endif

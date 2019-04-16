@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <unordered_map> 
 #include <opencv2/xfeatures2d.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
@@ -20,7 +21,8 @@ public:
   Agent(LCDetectorMultiCentralized *centralCerv,
         std::vector<std::string> &fileNames,
         unsigned agentId,
-        unsigned firstImageId);
+        unsigned firstImageId,
+        std::unordered_map <unsigned, std::vector<obindex2::ImageMatch>>* fRes);
   unsigned getId();
   void run();
 
@@ -34,5 +36,7 @@ private:
   cv::Mat prevDescriptors_;
   boost::mutex locker_;
   unsigned gImageId_;
+  std::vector<obindex2::ImageMatch> res_;
+  std::unordered_map <unsigned, std::vector<obindex2::ImageMatch>>* fRes_;
 };
 #endif

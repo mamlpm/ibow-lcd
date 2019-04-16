@@ -3,12 +3,14 @@
 LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
                                                        obindex2::ImageIndex *centralOb,
                                                        unsigned p,
-                                                       double mScore)
+                                                       double mScore,
+                                                       std::unordered_map<unsigned, std::vector<obindex2::ImageMatch>> *fReslt)
 {
     agents_ = agents;
     centralOb_ = centralOb;
     p_ = p;
     min_score_ = mScore;
+    fReslt_ = fReslt;
 }
 
 void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
@@ -43,7 +45,7 @@ void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
 
     for (unsigned i = 0; i < filesPerAgent_.size(); i++)
     {
-        Agent *a = new Agent(this, filesPerAgent_[i], i, firstImage[i]);
+        Agent *a = new Agent(this, filesPerAgent_[i], i, firstImage[i], fReslt_);
         agentSim_.create_thread(boost::bind(&Agent::run, a));
     }
 
@@ -57,10 +59,12 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                                               const cv::Mat &stableDescs,
                                               std::vector<cv::KeyPoint> keyPoints,
                                               std::vector<cv::KeyPoint> stableKeyPoints,
-                                              bool lookForLoop)
+                                              bool lookForLoop,
+                                              std::vector<obindex2::ImageMatch> *result)
 {
     locker_.lock();
-    std::cout << "Processing image " << imageId << " seen by agent " << agentN << std::endl; 
+    // Searching for loops
+    std::cout << "Processing image " << imageId << " seen by agent " << agentN << std::endl;
     if (lookForLoop)
     {
         std::vector<std::vector<cv::DMatch>> mtchs;
@@ -81,18 +85,25 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[0].agentId << " image " << iMatchVect[0].image_id << " scoring " << iMatchVect[0].score << std::endl;
             std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[1].agentId << " image " << iMatchVect[1].image_id << " scoring " << iMatchVect[1].score << std::endl;
             std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[2].agentId << " image " << iMatchVect[2].image_id << " scoring " << iMatchVect[2].score << std::endl;
-        }else
+        }
+        else
         {
             for (unsigned i = 0; i < iMatchVect.size(); i++)
             {
                 std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[i].agentId << " image " << iMatchVect[i].image_id << " scoring " << iMatchVect[i].score << std::endl;
             }
         }
-        
+        std::cout << "---" << std::endl;
 
         std::vector<obindex2::ImageMatch> iMatchFilt;
         filterCandidates(iMatchVect, &iMatchFilt);
+        if (iMatchVect.size() > 0)
+        {
+            result->push_back(iMatchVect[0]);
+        }
     }
+
+    // Adding new image to the index
     addImage(imageId, gImageID, agentN, stableKeyPoints, stableDescs);
     locker_.unlock();
 }
