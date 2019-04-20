@@ -22,7 +22,7 @@ public:
         std::vector<std::string> &fileNames,
         unsigned agentId,
         unsigned firstImageId,
-        std::unordered_map <unsigned, std::vector<obindex2::ImageMatch>>* fRes);
+        std::unordered_map <unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>>* fRes);
   unsigned getId();
   void run();
 
@@ -36,7 +36,7 @@ private:
   cv::Mat prevDescriptors_;
   boost::mutex locker_;
   unsigned gImageId_;
-  std::vector<obindex2::ImageMatch> res_;
-  std::unordered_map <unsigned, std::vector<obindex2::ImageMatch>>* fRes_;
+  std::vector<std::pair<unsigned, obindex2::ImageMatch>> res_;
+  std::unordered_map <unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>>* fRes_;
 };
 #endif

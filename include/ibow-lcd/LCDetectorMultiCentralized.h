@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <opencv2/xfeatures2d.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
@@ -22,7 +24,7 @@ public:
                              obindex2::ImageIndex *centralOb,
                              unsigned p,
                              double mScore,
-                             std::unordered_map<unsigned, std::vector<obindex2::ImageMatch>> *fReslt);
+                             std::unordered_map <unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>>* fReslt);
   void process(std::vector<std::string> &imageFiles);
   void processImage(unsigned agentN,
                     unsigned imageId,
@@ -32,7 +34,7 @@ public:
                     std::vector<cv::KeyPoint> keyPoints,
                     std::vector<cv::KeyPoint> stableKeyPoints,
                     bool lookForLoop,
-                    std::vector<obindex2::ImageMatch> *result);
+                    std::vector<std::pair<unsigned, obindex2::ImageMatch>> *result);
   void filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
                      std::vector<cv::DMatch> *filteredCandidates);
   void filterCandidates(
@@ -56,6 +58,6 @@ private:
   obindex2::ImageIndex *centralOb_;
   unsigned p_;
   double min_score_;
-  std::unordered_map<unsigned, std::vector<obindex2::ImageMatch>> *fReslt_;
+  std::unordered_map <unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>>* fReslt_;
 };
 #endif

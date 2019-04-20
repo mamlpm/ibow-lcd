@@ -47,7 +47,10 @@ int main(int argc, char **argv)
   std::cout << "Importing files..." << std::endl;
   std::vector<std::string> filenames; //import images
   getFilenames(argv[1], &filenames);
-  unsigned agents = 1;
+  unsigned agents;
+
+  std::cout << "How many agents do you want to use? " << std::endl;
+  std::cin >> agents;
 
   /******************Previous Code****************************/
   // unsigned nImages = filenames.size();
@@ -60,34 +63,46 @@ int main(int argc, char **argv)
     std::cout << "You should check the number of declared agents" << std::endl;
     return 0;
   }
-  std::unordered_map<unsigned, std::vector<obindex2::ImageMatch>> fResult;
+  std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> fResult;
   std::cout << "Total number of images to import " << filenames.size() << std::endl;
   obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, true);
   std::cout << "Initiallizing central agents manager..." << std::endl;
   LCDetectorMultiCentralized LCM(agents, &centralOb, 10, 0.3, &fResult);
   std::cout << "Initialllizing agents..." << std::endl;
   LCM.process(filenames);
-  std::cout << fResult.size() << std::endl;
+  std::cout << fResult.size() << "---"  << std::endl;
 
   unsigned nImages = filenames.size() / agents;
+  unsigned ii = 0;
+  unsigned jj = 0;
   for (unsigned i = 0; i < fResult.size(); i++)
   {
-    cv::namedWindow( std::to_string(i), cv::WINDOW_AUTOSIZE );
-    cv::namedWindow( std::to_string(i) + "." + std::to_string(i), cv::WINDOW_AUTOSIZE );
+    cv::namedWindow(std::to_string(i), cv::WINDOW_AUTOSIZE);
+    cv::namedWindow(std::to_string(i) + "." + std::to_string(i), cv::WINDOW_AUTOSIZE);
     for (unsigned j = 0; j < fResult[i].size(); j++)
     {
-      unsigned imageTorepresent = i * nImages + j;
-      unsigned imageTocompare = fResult[i][j].agentId * nImages + fResult[i][j].image_id;
+      if (fResult[ii][jj].first == j)
+      {
+        unsigned imageTorepresent = i * nImages + j;
+        unsigned imageTocompare = fResult[ii][jj].second.agentId * nImages + fResult[ii][jj].second.image_id;
 
-      std::cout << "Image " << imageTorepresent << " could close " << imageTocompare << std::endl
-      << "---" <<std::endl;
-      cv::Mat imgTreps = cv::imread(filenames[imageTorepresent]);
-      cv::Mat imgTocmp = cv::imread(filenames[imageTocompare]);
-      imshow(std::to_string(i), imgTreps);
-      cv::waitKey (5);
-      imshow(std::to_string(i) + "." + std::to_string(i), imgTocmp);
-      cv::waitKey(0);
+        std::cout << "Image " << imageTorepresent << " could close " << imageTocompare << std::endl
+                  << "---" << std::endl;
+        cv::Mat imgTreps = cv::imread(filenames[imageTorepresent]);
+        cv::Mat imgTocmp = cv::imread(filenames[imageTocompare]);
+        imshow(std::to_string(i), imgTreps);
+        cv::waitKey(5);
+        imshow(std::to_string(i) + "." + std::to_string(i), imgTocmp);
+        cv::waitKey(0);
+        jj++;
+      }
+      else
+      {
+        std::cout << "Image " << i * nImages + j << " unable to match" << std::endl
+                  << "---" << std::endl;
+      }
     }
+    ii++;
     cv::destroyAllWindows();
   }
 

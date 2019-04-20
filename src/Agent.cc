@@ -4,7 +4,7 @@ Agent::Agent(LCDetectorMultiCentralized *centralCerv,
              std::vector<std::string> &flNames,
              unsigned agentId,
              unsigned firstImageId,
-             std::unordered_map<unsigned, std::vector<obindex2::ImageMatch>> *fRes)
+             std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fRes)
 {
     centr_ = centralCerv;
     agentId_ = agentId;
@@ -104,5 +104,5 @@ void Agent::run()
         }
         gImageId_++;
     }
-    fRes_->insert({agentId_, res_});
+        fRes_->insert({agentId_, res_});
 }

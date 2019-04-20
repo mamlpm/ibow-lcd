@@ -4,7 +4,7 @@ LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
                                                        obindex2::ImageIndex *centralOb,
                                                        unsigned p,
                                                        double mScore,
-                                                       std::unordered_map<unsigned, std::vector<obindex2::ImageMatch>> *fReslt)
+                                                       std::unordered_map <unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>>* fReslt)
 {
     agents_ = agents;
     centralOb_ = centralOb;
@@ -60,7 +60,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                                               std::vector<cv::KeyPoint> keyPoints,
                                               std::vector<cv::KeyPoint> stableKeyPoints,
                                               bool lookForLoop,
-                                              std::vector<obindex2::ImageMatch> *result)
+                                              std::vector<std::pair<unsigned, obindex2::ImageMatch>> *result)
 {
     locker_.lock();
     // Searching for loops
@@ -82,15 +82,15 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
         sort(iMatchVect.begin(), iMatchVect.end(), compareByScore);
         if (iMatchVect.size() > 2)
         {
-            std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[0].agentId << " image " << iMatchVect[0].image_id << " scoring " << iMatchVect[0].score << std::endl;
-            std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[1].agentId << " image " << iMatchVect[1].image_id << " scoring " << iMatchVect[1].score << std::endl;
-            std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[2].agentId << " image " << iMatchVect[2].image_id << " scoring " << iMatchVect[2].score << std::endl;
+            std::cout << "Agent " << agentN << " image " << imageId << " (" << agentN * imagesPerAgent_ + imageId << ") with agent " << iMatchVect[0].agentId << " image " << iMatchVect[0].image_id << " (" << iMatchVect[0].agentId*imagesPerAgent_ + iMatchVect[0].image_id << ") scoring " << iMatchVect[0].score << std::endl;
+            std::cout << "Agent " << agentN << " image " << imageId << " (" << agentN * imagesPerAgent_ + imageId << ") with agent " << iMatchVect[1].agentId << " image " << iMatchVect[1].image_id << " (" << iMatchVect[1].agentId*imagesPerAgent_ + iMatchVect[1].image_id << ") scoring " << iMatchVect[1].score << std::endl;
+            std::cout << "Agent " << agentN << " image " << imageId << " (" << agentN * imagesPerAgent_ + imageId << ") with agent " << iMatchVect[2].agentId << " image " << iMatchVect[2].image_id << " (" << iMatchVect[2].agentId*imagesPerAgent_ + iMatchVect[2].image_id << ") scoring " << iMatchVect[2].score << std::endl;
         }
         else
         {
             for (unsigned i = 0; i < iMatchVect.size(); i++)
             {
-                std::cout << "Agent " << agentN << " image " << imageId << " with agent " << iMatchVect[i].agentId << " image " << iMatchVect[i].image_id << " scoring " << iMatchVect[i].score << std::endl;
+                std::cout << "Agent " << agentN << " image " << imageId << " (" << agentN * imagesPerAgent_ + imageId << ") with agent " << iMatchVect[i].agentId << " image " << iMatchVect[i].image_id << " (" << iMatchVect[i].agentId*imagesPerAgent_ + iMatchVect[i].image_id << ") scoring " << iMatchVect[i].score << std::endl;
             }
         }
         std::cout << "---" << std::endl;
@@ -99,7 +99,9 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
         filterCandidates(iMatchVect, &iMatchFilt);
         if (iMatchVect.size() > 0)
         {
-            result->push_back(iMatchVect[0]);
+            result->resize(result->size() + 1);
+            result->at(result->size() - 1).first = imageId;
+            result->at(result->size() - 1).second = iMatchVect[0];
         }
     }
 
