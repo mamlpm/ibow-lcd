@@ -22,7 +22,8 @@ public:
         std::vector<std::string> &fileNames,
         unsigned agentId,
         unsigned firstImageId,
-        std::unordered_map <unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>>* fRes);
+        std::unordered_map <unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>>* fRes,
+        std::vector<unsigned>* currImPAgent);
   unsigned getId();
   void run();
 
@@ -38,5 +39,6 @@ private:
   unsigned gImageId_;
   std::vector<std::pair<unsigned, obindex2::ImageMatch>> res_;
   std::unordered_map <unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>>* fRes_;
+  std::vector<unsigned>* currImPAgent_;
 };
 #endif

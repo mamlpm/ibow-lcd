@@ -4,13 +4,15 @@ Agent::Agent(LCDetectorMultiCentralized *centralCerv,
              std::vector<std::string> &flNames,
              unsigned agentId,
              unsigned firstImageId,
-             std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fRes)
+             std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fRes,
+             std::vector<unsigned>* currImPAgent)
 {
     centr_ = centralCerv;
     agentId_ = agentId;
     nImages_ = flNames.size();
     gImageId_ = firstImageId;
     fRes_ = fRes;
+    currImPAgent_ = currImPAgent;
     for (unsigned i = 0; i < flNames.size(); i++)
     {
         fileNames_.push_back(flNames[i]);
@@ -30,7 +32,7 @@ void Agent::run()
         cv::xfeatures2d::BriefDescriptorExtractor::create(); //create a descriptor extractor
     for (unsigned j = 0; j < fileNames_.size(); j++)
     {
-
+        currImPAgent_->at(agentId_) = j;
         std::vector<cv::KeyPoint> kpoints;
         cv::Mat importedImage = cv::imread(fileNames_[j]); //import image to read
         // locker_.lock();

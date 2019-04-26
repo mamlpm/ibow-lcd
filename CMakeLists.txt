@@ -81,7 +81,9 @@ target_link_libraries(lcdetector
 add_executable(ibowLCD_dist
                src/mainAgent.cc
                src/Agent.cc
+               include/ibow-lcd/IslanDistributed.h
                src/LCDetectorMultiCentralized.cc)
+
 target_link_libraries(ibowLCD_dist 
                       ${catkin_LIBRARIES}
                       ${OpenCV_LIBRARIES}
