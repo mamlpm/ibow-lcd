@@ -6,19 +6,26 @@ LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
                                                        double mScore,
                                                        std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fReslt,
                                                        unsigned island_size,
-                                                       int min_consecutive_loops)
+                                                       int min_consecutive_loops,
+                                                       unsigned min_inliers,
+                                                       unsigned nndr_bf,
+                                                       double epDist,
+                                                       double confProb)
 {
     agents_ = agents;
     centralOb_ = centralOb;
     p_ = p;
-    min_score_ = mScore;
+    minScore_ = mScore;
     fReslt_ = fReslt;
-    island_size_ = island_size;
-    island_offset_ = island_size / 2;
+    islandSize_ = island_size;
+    islandOffset_ = island_size / 2;
     currentImagePerAgent_.resize(agents);
     lastLcIsland_.resize(agents);
-    consecutive_loops_ = 0;
-    min_consecutive_loops_ = min_consecutive_loops;
+    prevDescs_.resize(agents);
+    prevKps_.resize(agents);
+    consecutiveLoops_ = 0;
+    minConsecutiveLoops_ = min_consecutive_loops;
+    minInliers_ = min_inliers;
 }
 
 void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
@@ -73,6 +80,15 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
     locker_.lock();
     // Searching for loops
     //std::cout << "Processing image " << imageId << " seen by agent " << agentN << std::endl;
+
+    // std::cout << "Argument data: " << descs.rows << " | " << descs.cols << std::endl;
+    prevDescs_[agentN].resize(imageId + 1);
+    prevDescs_[agentN][imageId] = descs;
+    // std::cout << descs.rows << " | " << descs.cols << std::endl;
+    // std::cout << "HAgent " << agentN << " " << imageId << " | " << prevDescs_[agentN].size() << std::endl;
+    prevKps_[agentN].resize(imageId + 1);
+    prevKps_[agentN][imageId] = keyPoints;
+
     LCDetectorMultiCentralizedResult rslt;
     if (lookForLoop)
     {
@@ -123,7 +139,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             rslt.status = LC_NOT_ENOUGH_ISLANDS;
             rslt.train_id = 0;
             rslt.inliers = 0;
-            last_lc_result_.status = LC_NOT_ENOUGH_ISLANDS;
+            lastLcResult_.status = LC_NOT_ENOUGH_ISLANDS;
             shouldGetOut = 1;
         }
 
@@ -136,58 +152,76 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             {
                 island = p_islands[0];
 
-                std::cout << "---" << std::endl;
-                std::cout << "Prior island important number " << p_islands[0].img_id << " limits " << p_islands[0].min_img_id << " | "
-                          << p_islands[0].max_img_id << " agent " << p_islands[0].agentId << std::endl;
-                std::cout << "Last loop closure island important number " << lastLcIsland_[agentN].img_id << " limits "
-                          << lastLcIsland_[agentN].min_img_id << " | " << lastLcIsland_[agentN].max_img_id << " agent "
-                          << lastLcIsland_[agentN].agentId << std::endl;
+                // std::cout << "---" << std::endl;
+
+                // std::cout << "Prior island important number " << p_islands[0].img_id << " limits " << p_islands[0].min_img_id << " | "
+                //           << p_islands[0].max_img_id << " agent " << p_islands[0].agentId << std::endl;
+
+                // std::cout << "Last loop closure island important number " << lastLcIsland_[agentN].img_id << " limits "
+                //           << lastLcIsland_[agentN].min_img_id << " | " << lastLcIsland_[agentN].max_img_id << " agent "
+                //           << lastLcIsland_[agentN].agentId << std::endl;
             }
             lastLcIsland_[agentN] = island;
             bool overlap = p_islands.size() != 0;
 
             unsigned best_img = island.img_id;
+            unsigned bestAgentNum = island.agentId;
+            // std::cout << "---" << std::endl
+            //           << "Input data: " << prevDescs_[bestAgentNum][best_img].rows << " | "
+            //           << prevDescs_[bestAgentNum][best_img].cols << std::endl
+            //           << "Agent Nº: " << bestAgentNum << std::endl
+            //           << "Best image Nº: " << best_img << std::endl
+            //           << "Vector size: " << prevDescs_.size() << std::endl
+            //           << "Vector of vector size: " << prevDescs_[bestAgentNum].size() << std::endl
+            //           << "Number of images processed by this agent: " << imageId << std::endl
+            //           << "---" << std::endl;
+            // Assessing the loop
+            if (consecutiveLoops_ > minConsecutiveLoops_ && overlap)
+            {
+                // std::cout << "Hola 1" << std::endl;
+                // LOOP can be considered as detected
+                rslt.status = LC_DETECTED;
+                rslt.train_id = best_img;
+                rslt.inliers = 0;
+                // Store the last result
+                lastLcResult_ = rslt;
+                consecutiveLoops_++;
+            }
+            else
+            {
+                // std::cout << "Hola 2" << std::endl;
+                // We obtain the image matchings, since we need them for compute F
+                std::vector<cv::DMatch> tmatches;
+                std::vector<cv::Point2f> tquery;
+                std::vector<cv::Point2f> ttrain;
+                ratioMatchingBF(descs, prevDescs_[bestAgentNum][best_img], &tmatches);
+                // std::cout << "Hola 2.0" << std::endl;
+                convertPoints(keyPoints, prevKps_[bestAgentNum][best_img], tmatches, &tquery, &ttrain);
+                // std::cout << "Hola 2.1" << std::endl;
+                unsigned inliers = checkEpipolarGeometry(tquery, ttrain);
+                // std::cout << "Hola 2.2" << std::endl;
 
-            // // Assessing the loop
-            // if (consecutive_loops_ > min_consecutive_loops_ && overlap)
-            // {
-            //     // LOOP can be considered as detected
-            //     rslt.status = LC_DETECTED;
-            //     rslt.train_id = best_img;
-            //     rslt.inliers = 0;
-            //     // Store the last result
-            //     last_lc_result_ = *rslt;
-            //     consecutive_loops_++;
-            // }
-            // else
-            // {
-            //     // We obtain the image matchings, since we need them for compute F
-            //     std::vector<cv::DMatch> tmatches;
-            //     std::vector<cv::Point2f> tquery;
-            //     std::vector<cv::Point2f> ttrain;
-            //     ratioMatchingBF(descs, prev_descs_[best_img], &tmatches);
-            //     convertPoints(kps, prev_kps_[best_img], tmatches, &tquery, &ttrain);
-            //     unsigned inliers = checkEpipolarGeometry(tquery, ttrain);
-
-            //     if (inliers > min_inliers_)
-            //     {
-            //         // LOOP detected
-            //         rslt.status = LC_DETECTED;
-            //         rslt.train_id = best_img;
-            //         rslt.inliers = inliers;
-            //         // Store the last result
-            //         last_lc_result_ = *rslt;
-            //         consecutive_loops_++;
-            //     }
-            //     else
-            //     {
-            //         rslt.status = LC_NOT_ENOUGH_INLIERS;
-            //         rslt.train_id = best_img;
-            //         rslt.inliers = inliers;
-            //         last_lc_result_.status = LC_NOT_ENOUGH_INLIERS;
-            //         consecutive_loops_ = 0;
-            //     }
-            // }
+                if (inliers > minInliers_)
+                {
+                    // std::cout << "Hola 3" << std::endl;
+                    // LOOP detected
+                    rslt.status = LC_DETECTED;
+                    rslt.train_id = best_img;
+                    rslt.inliers = inliers;
+                    // Store the last result
+                    lastLcResult_ = rslt;
+                    consecutiveLoops_++;
+                }
+                else
+                {
+                    // std::cout << "Hola 4" << std::endl;
+                    rslt.status = LC_NOT_ENOUGH_INLIERS;
+                    rslt.train_id = best_img;
+                    rslt.inliers = inliers;
+                    lastLcResult_.status = LC_NOT_ENOUGH_INLIERS;
+                    consecutiveLoops_ = 0;
+                }
+            }
         }
     }
 
@@ -225,7 +259,7 @@ void LCDetectorMultiCentralized::filterCandidates(
             double new_score = (image_matches[i].score - min_score) /
                                (max_score - min_score);
             // Assessing if this image match is higher than a threshold
-            if (new_score > min_score_)
+            if (new_score > minScore_)
             {
                 obindex2::ImageMatch match = image_matches[i];
                 match.score = new_score;
@@ -288,9 +322,9 @@ void LCDetectorMultiCentralized::buildIslands(const std::vector<obindex2::ImageM
         double curr_score = image_matches[i].score;
 
         // Theoretical island limits
-        unsigned min_id = static_cast<unsigned>(std::max((int)curr_img_id - (int)island_offset_,
+        unsigned min_id = static_cast<unsigned>(std::max((int)curr_img_id - (int)islandOffset_,
                                                          0));
-        unsigned max_id = static_cast<unsigned>(std::min(curr_img_id + island_offset_, currentImagePerAgent_[nAgent] - 1));
+        unsigned max_id = static_cast<unsigned>(std::min(curr_img_id + islandOffset_, currentImagePerAgent_[nAgent] - 1));
 
         // We search for the closest island
         bool found = false;
@@ -331,14 +365,14 @@ void LCDetectorMultiCentralized::buildIslands(const std::vector<obindex2::ImageM
     }
 
     std::sort(islands->begin(), islands->end());
-    std::cout << "---" << std::endl;
-    std::cout << islands->size() << " islands have been created" << std::endl;
-    for (unsigned a = 0; a < islands->size(); a++)
-    {
-        std::cout << "Agent " << islands->at(a).agentId << " new island important number: " << islands->at(a).img_id
-                  << " limits: " << islands->at(a).min_img_id << " | " << islands->at(a).max_img_id << " with score: "
-                  << islands->at(a).score << std::endl;
-    }
+    // std::cout << "---" << std::endl;
+    // std::cout << islands->size() << " islands have been created" << std::endl;
+    // for (unsigned a = 0; a < islands->size(); a++)
+    // {
+    //     std::cout << "Agent " << islands->at(a).agentId << " new island important number: " << islands->at(a).img_id
+    //               << " limits: " << islands->at(a).min_img_id << " | " << islands->at(a).max_img_id << " with score: "
+    //               << islands->at(a).score << std::endl;
+    // }
 }
 
 void LCDetectorMultiCentralized::getPriorIslands(const ibow_lcd::IslanDistributed &island,
@@ -356,4 +390,88 @@ void LCDetectorMultiCentralized::getPriorIslands(const ibow_lcd::IslanDistribute
             p_islands->push_back(tisl);
         }
     }
+}
+
+void LCDetectorMultiCentralized::ratioMatchingBF(const cv::Mat &query,
+                                                 const cv::Mat &train,
+                                                 std::vector<cv::DMatch> *matches)
+{
+    // if (query.rows <= 0 || query.cols <= 0 || train.rows <= 0 || train.cols <= 0)
+    // {
+    //     std::cout << "Getting out from here "
+    //               << "Query: " << query.rows << " | " << query.cols << std::endl
+    //               << "Train: " << train.rows << " | " << train.cols << std::endl;
+    //     return;
+    // }
+    // std::cout << "Hola 2.0.1" << std::endl;
+    matches->clear();
+    cv::BFMatcher matcher(cv::NORM_HAMMING);
+
+    // Matching descriptors
+    std::vector<std::vector<cv::DMatch>> matches12;
+    // std::cout << "Hola 2.0.2" << std::endl;
+
+    // std::cout << "Query: " << query.rows << " | " << query.cols << std::endl;
+    // std::cout << "Train: " << train.rows << " | " << train.cols << std::endl;
+
+    matcher.knnMatch(query, train, matches12, 2);
+    // std::cout << "Hola 2.0.3" << std::endl;
+
+    // Filtering the resulting matchings according to the given ratio
+    for (unsigned m = 0; m < matches12.size(); m++)
+    {
+        if (matches12[m][0].distance <= matches12[m][1].distance * nndrBf_)
+        {
+            matches->push_back(matches12[m][0]);
+        }
+    }
+}
+
+void LCDetectorMultiCentralized::convertPoints(const std::vector<cv::KeyPoint> &query_kps,
+                                               const std::vector<cv::KeyPoint> &train_kps,
+                                               const std::vector<cv::DMatch> &matches,
+                                               std::vector<cv::Point2f> *query,
+                                               std::vector<cv::Point2f> *train)
+{
+    query->clear();
+    train->clear();
+    for (auto it = matches.begin(); it != matches.end(); it++)
+    {
+        // Get the position of query keypoints
+        float x = query_kps[it->queryIdx].pt.x;
+        float y = query_kps[it->queryIdx].pt.y;
+        query->push_back(cv::Point2f(x, y));
+
+        // Get the position of train keypoints
+        x = train_kps[it->trainIdx].pt.x;
+        y = train_kps[it->trainIdx].pt.y;
+        train->push_back(cv::Point2f(x, y));
+    }
+}
+
+unsigned LCDetectorMultiCentralized::checkEpipolarGeometry(const std::vector<cv::Point2f> &query,
+                                                           const std::vector<cv::Point2f> &train)
+{
+    std::vector<uchar> inliers(query.size(), 0);
+    if (query.size() > 7)
+    {
+        cv::Mat F =
+            cv::findFundamentalMat(
+                cv::Mat(query), cv::Mat(train), // Matching points
+                CV_FM_RANSAC,                   // RANSAC method
+                epDist_,                        // Distance to epipolar line
+                confProb_,                      // Confidence probability
+                inliers);                       // Match status (inlier or outlier)
+    }
+
+    // Extract the surviving (inliers) matches
+    auto it = inliers.begin();
+    unsigned total_inliers = 0;
+    for (; it != inliers.end(); it++)
+    {
+        if (*it)
+            total_inliers++;
+    }
+
+    return total_inliers;
 }

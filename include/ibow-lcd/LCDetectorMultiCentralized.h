@@ -15,8 +15,8 @@
 #include <boost/chrono.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-
-enum LCDetectorMultiCentralizedStatus {
+enum LCDetectorMultiCentralizedStatus
+{
   LC_DETECTED,
   LC_NOT_DETECTED,
   LC_NOT_ENOUGH_IMAGES,
@@ -28,9 +28,9 @@ enum LCDetectorMultiCentralizedStatus {
 struct LCDetectorMultiCentralizedResult
 {
   LCDetectorMultiCentralizedResult() : status(LC_NOT_DETECTED),
-                       agentId(0),
-                       query_id(1),
-                       train_id(-1) {}
+                                       agentId(0),
+                                       query_id(1),
+                                       train_id(-1) {}
 
   inline bool isLoop()
   {
@@ -56,8 +56,14 @@ public:
                              double mScore,
                              std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fReslt,
                              unsigned island_size,
-                             int min_consecutive_loops);
+                             int min_consecutive_loops,
+                             unsigned min_inliers,
+                             unsigned nndr_bf,
+                             double epDist,
+                             double confProb);
+
   void process(std::vector<std::string> &imageFiles);
+
   void processImage(unsigned agentN,
                     unsigned imageId,
                     unsigned gImageId,
@@ -70,6 +76,7 @@ public:
 
   void filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
                      std::vector<cv::DMatch> *filteredCandidates);
+
   void filterCandidates(
       const std::vector<obindex2::ImageMatch> &image_matches,
       std::vector<obindex2::ImageMatch> *image_matches_filt);
@@ -85,9 +92,22 @@ public:
   void buildIslands(const std::vector<obindex2::ImageMatch> &image_matches,
                     std::vector<ibow_lcd::IslanDistributed> *islands);
 
-  void getPriorIslands(const ibow_lcd::IslanDistributed& island,
-                       const std::vector<ibow_lcd::IslanDistributed>& islands,
-                       std::vector<ibow_lcd::IslanDistributed>* p_islands);
+  void getPriorIslands(const ibow_lcd::IslanDistributed &island,
+                       const std::vector<ibow_lcd::IslanDistributed> &islands,
+                       std::vector<ibow_lcd::IslanDistributed> *p_islands);
+
+  void ratioMatchingBF(const cv::Mat &query,
+                       const cv::Mat &train,
+                       std::vector<cv::DMatch> *matches);
+
+  void convertPoints(const std::vector<cv::KeyPoint> &query_kps,
+                     const std::vector<cv::KeyPoint> &train_kps,
+                     const std::vector<cv::DMatch> &matches,
+                     std::vector<cv::Point2f> *query,
+                     std::vector<cv::Point2f> *train);
+
+  unsigned checkEpipolarGeometry(const std::vector<cv::Point2f> &query,
+                                 const std::vector<cv::Point2f> &train);
 
 private:
   unsigned imagesPerAgent_;
@@ -98,14 +118,20 @@ private:
   boost::mutex locker_;
   obindex2::ImageIndex *centralOb_;
   unsigned p_;
-  double min_score_;
-  unsigned island_offset_;
-  unsigned island_size_;
+  double minScore_;
+  unsigned islandOffset_;
+  unsigned islandSize_;
   std::vector<unsigned> currentImagePerAgent_;
   std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fReslt_;
-  LCDetectorMultiCentralizedResult last_lc_result_;
+  LCDetectorMultiCentralizedResult lastLcResult_;
   std::vector<ibow_lcd::IslanDistributed> lastLcIsland_;
-  int consecutive_loops_;
-  int min_consecutive_loops_;
+  int consecutiveLoops_;
+  int minConsecutiveLoops_;
+  std::vector<std::vector<cv::Mat>> prevDescs_;
+  std::vector<std::vector<std::vector<cv::KeyPoint>>> prevKps_;
+  unsigned minInliers_;
+  float nndrBf_;
+  double epDist_;
+  double confProb_;
 };
 #endif
