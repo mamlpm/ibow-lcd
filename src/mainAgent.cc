@@ -155,6 +155,8 @@ int main(int argc, char **argv)
   //   // usleep(5000000);
   //   usleep(100000);
   // }
+
+  std::cout << "---" << std::endl;
   std::cout << "All images processed" << std::endl;
   // cv::destroyAllWindows();
   return 0;

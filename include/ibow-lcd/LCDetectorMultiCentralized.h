@@ -28,7 +28,8 @@ enum LCDetectorMultiCentralizedStatus
 struct LCDetectorMultiCentralizedResult
 {
   LCDetectorMultiCentralizedResult() : status(LC_NOT_DETECTED),
-                                       agentId(0),
+                                       QagentId(0),
+                                       TagentId(0),
                                        query_id(1),
                                        train_id(-1) {}
 
@@ -38,7 +39,8 @@ struct LCDetectorMultiCentralizedResult
   }
 
   LCDetectorMultiCentralizedStatus status;
-  unsigned agentId;
+  unsigned QagentId;
+  unsigned TagentId;
   unsigned query_id;
   unsigned train_id;
   unsigned inliers;
@@ -58,7 +60,7 @@ public:
                              unsigned island_size,
                              int min_consecutive_loops,
                              unsigned min_inliers,
-                             unsigned nndr_bf,
+                             float nndr_bf,
                              double epDist,
                              double confProb);
 
@@ -110,6 +112,7 @@ public:
                                  const std::vector<cv::Point2f> &train);
 
 private:
+  unsigned* globalImagePointer_;
   unsigned imagesPerAgent_;
   unsigned agents_;
   std::vector<std::vector<std::string>> filesPerAgent_;

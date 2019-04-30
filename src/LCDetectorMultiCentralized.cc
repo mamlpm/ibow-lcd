@@ -8,7 +8,7 @@ LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
                                                        unsigned island_size,
                                                        int min_consecutive_loops,
                                                        unsigned min_inliers,
-                                                       unsigned nndr_bf,
+                                                       float nndr_bf,
                                                        double epDist,
                                                        double confProb)
 {
@@ -26,6 +26,9 @@ LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
     consecutiveLoops_ = 0;
     minConsecutiveLoops_ = min_consecutive_loops;
     minInliers_ = min_inliers;
+    nndrBf_ = nndr_bf;
+    epDist_ = epDist;
+    confProb_ = confProb;
 }
 
 void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
@@ -57,6 +60,8 @@ void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
 
         std::cout << "I'm agent " << i << " and I have to process " << filesPerAgent_[i].size() << " Images" << std::endl;
     }
+
+    globalImagePointer_ = firstImage;
 
     for (unsigned i = 0; i < filesPerAgent_.size(); i++)
     {
@@ -90,6 +95,8 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
     prevKps_[agentN][imageId] = keyPoints;
 
     LCDetectorMultiCentralizedResult rslt;
+    rslt.query_id = imageId;
+    rslt.QagentId = agentN;
     if (lookForLoop)
     {
         std::vector<std::vector<cv::DMatch>> mtchs;
@@ -151,30 +158,14 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             if (p_islands.size())
             {
                 island = p_islands[0];
-
-                // std::cout << "---" << std::endl;
-
-                // std::cout << "Prior island important number " << p_islands[0].img_id << " limits " << p_islands[0].min_img_id << " | "
-                //           << p_islands[0].max_img_id << " agent " << p_islands[0].agentId << std::endl;
-
-                // std::cout << "Last loop closure island important number " << lastLcIsland_[agentN].img_id << " limits "
-                //           << lastLcIsland_[agentN].min_img_id << " | " << lastLcIsland_[agentN].max_img_id << " agent "
-                //           << lastLcIsland_[agentN].agentId << std::endl;
             }
+
             lastLcIsland_[agentN] = island;
             bool overlap = p_islands.size() != 0;
 
             unsigned best_img = island.img_id;
             unsigned bestAgentNum = island.agentId;
-            // std::cout << "---" << std::endl
-            //           << "Input data: " << prevDescs_[bestAgentNum][best_img].rows << " | "
-            //           << prevDescs_[bestAgentNum][best_img].cols << std::endl
-            //           << "Agent Nº: " << bestAgentNum << std::endl
-            //           << "Best image Nº: " << best_img << std::endl
-            //           << "Vector size: " << prevDescs_.size() << std::endl
-            //           << "Vector of vector size: " << prevDescs_[bestAgentNum].size() << std::endl
-            //           << "Number of images processed by this agent: " << imageId << std::endl
-            //           << "---" << std::endl;
+            
             // Assessing the loop
             if (consecutiveLoops_ > minConsecutiveLoops_ && overlap)
             {
@@ -182,6 +173,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                 // LOOP can be considered as detected
                 rslt.status = LC_DETECTED;
                 rslt.train_id = best_img;
+                rslt.TagentId = bestAgentNum;
                 rslt.inliers = 0;
                 // Store the last result
                 lastLcResult_ = rslt;
@@ -189,24 +181,34 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             }
             else
             {
-                // std::cout << "Hola 2" << std::endl;
                 // We obtain the image matchings, since we need them for compute F
                 std::vector<cv::DMatch> tmatches;
                 std::vector<cv::Point2f> tquery;
                 std::vector<cv::Point2f> ttrain;
+
+                // std::cout << "---" << std::endl << "Agent that has seen the best image " << bestAgentNum << std::endl
+                //           << "Agent that has seen the current processed image " << agentN << std::endl;
+
+                // std::cout << "Just recieved descriptors: " << descs.rows << " | " << descs.cols << std::endl
+                //           << "Previously processed descriptors: " << prevDescs_[bestAgentNum][best_img].rows << " | "
+                //           << prevDescs_[bestAgentNum][best_img].cols << std::endl;
+
                 ratioMatchingBF(descs, prevDescs_[bestAgentNum][best_img], &tmatches);
-                // std::cout << "Hola 2.0" << std::endl;
+
+                // std::cout << "Just recieved keypoints: " << keyPoints.size() << std::endl
+                //           << "Previously processed keypoints: " << prevKps_[bestAgentNum][best_img].size() << std::endl
+                //           << "Found matches processing descriptors: " << tmatches.size() << std::endl << std::endl;
                 convertPoints(keyPoints, prevKps_[bestAgentNum][best_img], tmatches, &tquery, &ttrain);
-                // std::cout << "Hola 2.1" << std::endl;
+
+                // std::cout << "Query and train points: "  << tquery.size() << " | " << ttrain.size() << std::endl << std::endl;
                 unsigned inliers = checkEpipolarGeometry(tquery, ttrain);
-                // std::cout << "Hola 2.2" << std::endl;
 
                 if (inliers > minInliers_)
                 {
-                    // std::cout << "Hola 3" << std::endl;
                     // LOOP detected
                     rslt.status = LC_DETECTED;
                     rslt.train_id = best_img;
+                    rslt.TagentId = bestAgentNum;
                     rslt.inliers = inliers;
                     // Store the last result
                     lastLcResult_ = rslt;
@@ -217,11 +219,41 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                     // std::cout << "Hola 4" << std::endl;
                     rslt.status = LC_NOT_ENOUGH_INLIERS;
                     rslt.train_id = best_img;
+                    rslt.TagentId = bestAgentNum;
                     rslt.inliers = inliers;
                     lastLcResult_.status = LC_NOT_ENOUGH_INLIERS;
                     consecutiveLoops_ = 0;
                 }
             }
+        }
+
+        std::cout << "---" << std::endl;
+        switch (rslt.status)
+        {
+        case LC_NOT_DETECTED:
+            std::cout << "No loop closure detected" << std::endl;
+            break;
+        case LC_NOT_ENOUGH_IMAGES:
+            std::cout << "Not enough images to close loop" << std::endl;
+            break;
+        case LC_NOT_ENOUGH_ISLANDS:
+            std::cout << "Not enough islands to close loop" << std::endl;
+            break;
+        case LC_NOT_ENOUGH_INLIERS:
+            std::cout << "Not enough inliers to close a loop" << std::endl;
+            break;
+        case LC_TRANSITION:
+            std::cout << "Currently in a transition" << std::endl;
+            break;
+        case LC_DETECTED:
+            
+            unsigned globalQueryImage = globalImagePointer_[rslt.QagentId] + rslt.query_id;
+            unsigned globalTrainImage = globalImagePointer_[rslt.TagentId] + rslt.train_id;
+            std::cout << "LOOP DETECTED!" << std::endl;
+            std::cout << "Query image " << rslt.query_id << " of agent " << rslt.QagentId << " (" << globalQueryImage
+                      << ") with train image " << rslt.train_id << " of agent " << rslt.TagentId 
+                      << " (" << globalTrainImage << ")" <<std::endl;
+            break;
         }
     }
 
@@ -365,14 +397,6 @@ void LCDetectorMultiCentralized::buildIslands(const std::vector<obindex2::ImageM
     }
 
     std::sort(islands->begin(), islands->end());
-    // std::cout << "---" << std::endl;
-    // std::cout << islands->size() << " islands have been created" << std::endl;
-    // for (unsigned a = 0; a < islands->size(); a++)
-    // {
-    //     std::cout << "Agent " << islands->at(a).agentId << " new island important number: " << islands->at(a).img_id
-    //               << " limits: " << islands->at(a).min_img_id << " | " << islands->at(a).max_img_id << " with score: "
-    //               << islands->at(a).score << std::endl;
-    // }
 }
 
 void LCDetectorMultiCentralized::getPriorIslands(const ibow_lcd::IslanDistributed &island,
@@ -403,25 +427,23 @@ void LCDetectorMultiCentralized::ratioMatchingBF(const cv::Mat &query,
     //               << "Train: " << train.rows << " | " << train.cols << std::endl;
     //     return;
     // }
-    // std::cout << "Hola 2.0.1" << std::endl;
     matches->clear();
     cv::BFMatcher matcher(cv::NORM_HAMMING);
 
     // Matching descriptors
     std::vector<std::vector<cv::DMatch>> matches12;
-    // std::cout << "Hola 2.0.2" << std::endl;
-
-    // std::cout << "Query: " << query.rows << " | " << query.cols << std::endl;
-    // std::cout << "Train: " << train.rows << " | " << train.cols << std::endl;
 
     matcher.knnMatch(query, train, matches12, 2);
-    // std::cout << "Hola 2.0.3" << std::endl;
+
+    //std::cout << "Matches found using brute force: " << matches12.size() << std::endl << std::endl;
 
     // Filtering the resulting matchings according to the given ratio
+    //std::cout << nndrBf_ << std::endl;
     for (unsigned m = 0; m < matches12.size(); m++)
     {
         if (matches12[m][0].distance <= matches12[m][1].distance * nndrBf_)
         {
+            //std::cout << "Hola caracola" << std::endl;
             matches->push_back(matches12[m][0]);
         }
     }
@@ -472,6 +494,7 @@ unsigned LCDetectorMultiCentralized::checkEpipolarGeometry(const std::vector<cv:
         if (*it)
             total_inliers++;
     }
+
 
     return total_inliers;
 }
