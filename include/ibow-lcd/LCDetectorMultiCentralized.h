@@ -56,7 +56,7 @@ public:
                              obindex2::ImageIndex *centralOb,
                              unsigned p,
                              double mScore,
-                             std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fReslt,
+                             std::vector<std::vector<int>> *fReslt,
                              unsigned island_size,
                              int min_consecutive_loops,
                              unsigned min_inliers,
@@ -73,8 +73,7 @@ public:
                     const cv::Mat &stableDescs,
                     std::vector<cv::KeyPoint> keyPoints,
                     std::vector<cv::KeyPoint> stableKeyPoints,
-                    bool lookForLoop,
-                    std::vector<std::pair<unsigned, obindex2::ImageMatch>> *result);
+                    bool lookForLoop);
 
   void filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
                      std::vector<cv::DMatch> *filteredCandidates);
@@ -125,7 +124,7 @@ private:
   unsigned islandOffset_;
   unsigned islandSize_;
   std::vector<unsigned> currentImagePerAgent_;
-  std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fReslt_;
+  std::vector<std::vector<int>> *fReslt_;
   LCDetectorMultiCentralizedResult lastLcResult_;
   std::vector<ibow_lcd::IslanDistributed> lastLcIsland_;
   int consecutiveLoops_;

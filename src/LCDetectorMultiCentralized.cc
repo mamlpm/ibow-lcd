@@ -4,7 +4,7 @@ LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
                                                        obindex2::ImageIndex *centralOb,
                                                        unsigned p,
                                                        double mScore,
-                                                       std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fReslt,
+                                                       std::vector<std::vector<int>> *fReslt,
                                                        unsigned island_size,
                                                        int min_consecutive_loops,
                                                        unsigned min_inliers,
@@ -65,7 +65,8 @@ void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
 
     for (unsigned i = 0; i < filesPerAgent_.size(); i++)
     {
-        Agent *a = new Agent(this, filesPerAgent_[i], i, firstImage[i], fReslt_, &currentImagePerAgent_);
+        Agent *a = new Agent(this, filesPerAgent_[i], i, firstImage[i], &currentImagePerAgent_);
+        // Agent *a = new Agent(this, filesPerAgent_[i], i, firstImage[i], fReslt_, &currentImagePerAgent_);
         agentSim_.create_thread(boost::bind(&Agent::run, a));
     }
 
@@ -79,8 +80,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                                               const cv::Mat &stableDescs,
                                               std::vector<cv::KeyPoint> keyPoints,
                                               std::vector<cv::KeyPoint> stableKeyPoints,
-                                              bool lookForLoop,
-                                              std::vector<std::pair<unsigned, obindex2::ImageMatch>> *result)
+                                              bool lookForLoop)
 {
     locker_.lock();
     // Searching for loops
@@ -129,12 +129,6 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
 
         std::vector<obindex2::ImageMatch> iMatchFilt;
         filterCandidates(iMatchVect, &iMatchFilt);
-        if (iMatchVect.size() > 0)
-        {
-            result->resize(result->size() + 1);
-            result->at(result->size() - 1).first = imageId;
-            result->at(result->size() - 1).second = iMatchVect[0];
-        }
 
         std::vector<ibow_lcd::IslanDistributed> islands;
         buildIslands(iMatchFilt, &islands);
@@ -165,7 +159,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
 
             unsigned best_img = island.img_id;
             unsigned bestAgentNum = island.agentId;
-            
+
             // Assessing the loop
             if (consecutiveLoops_ > minConsecutiveLoops_ && overlap)
             {
@@ -228,6 +222,10 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
         }
 
         std::cout << "---" << std::endl;
+
+        unsigned globalQueryImage = globalImagePointer_[rslt.QagentId] + rslt.query_id;
+        unsigned globalTrainImage = globalImagePointer_[rslt.TagentId] + rslt.train_id;
+        
         switch (rslt.status)
         {
         case LC_NOT_DETECTED:
@@ -246,16 +244,28 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             std::cout << "Currently in a transition" << std::endl;
             break;
         case LC_DETECTED:
-            
-            unsigned globalQueryImage = globalImagePointer_[rslt.QagentId] + rslt.query_id;
-            unsigned globalTrainImage = globalImagePointer_[rslt.TagentId] + rslt.train_id;
             std::cout << "LOOP DETECTED!" << std::endl;
-            std::cout << "Query image " << rslt.query_id << " of agent " << rslt.QagentId << " (" << globalQueryImage
-                      << ") with train image " << rslt.train_id << " of agent " << rslt.TagentId 
-                      << " (" << globalTrainImage << ")" <<std::endl;
+            std::cout << "Query image " << rslt.query_id << " of agent " << rslt.QagentId
+                      << " (" << globalQueryImage
+                      << ") with train image " << rslt.train_id << " of agent " << rslt.TagentId
+                      << " (" << globalTrainImage << ")" << std::endl;
             break;
         }
+
+        std::vector<int> rlt;
+        rlt.push_back(static_cast<int>(globalTrainImage));
+        rlt.push_back(static_cast<int>(rslt.inliers));
+        fReslt_->at(globalQueryImage) = rlt;
+        //std::cout << globalQueryImage << std::endl;
     }
+    // else
+    // {
+    //     std::vector<int> rlt;
+    //     rlt.push_back(-1);
+    //     rlt.push_back(-1);
+    //     fReslt_->at(globalImagePointer_[agentN] + imageId) = rlt;
+    //     std::cout << globalImagePointer_[agentN] + imageId << std::endl;
+    // }    
 
     // Adding new image to the index
     addImage(imageId, gImageID, agentN, stableKeyPoints, stableDescs);
@@ -494,7 +504,6 @@ unsigned LCDetectorMultiCentralized::checkEpipolarGeometry(const std::vector<cv:
         if (*it)
             total_inliers++;
     }
-
 
     return total_inliers;
 }

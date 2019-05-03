@@ -4,14 +4,13 @@ Agent::Agent(LCDetectorMultiCentralized *centralCerv,
              std::vector<std::string> &flNames,
              unsigned agentId,
              unsigned firstImageId,
-             std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> *fRes,
              std::vector<unsigned>* currImPAgent)
 {
     centr_ = centralCerv;
     agentId_ = agentId;
     nImages_ = flNames.size();
     gImageId_ = firstImageId;
-    fRes_ = fRes;
+    //fRes_ = fRes;
     currImPAgent_ = currImPAgent;
     for (unsigned i = 0; i < flNames.size(); i++)
     {
@@ -54,8 +53,12 @@ void Agent::run()
                 previousImage_ = importedImage; //update the last seen image
                 prevDescriptors_ = descript;    //Update previous seen descrpitors matrix
 
-                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 0, &res_);
+                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 0);
+            }else
+            {
+                std::cerr << std::endl << "There are no KeyPoints found" << std::endl;
             }
+            
         }
         else
         {
@@ -94,7 +97,7 @@ void Agent::run()
                 /***************************************/
 
                 /*****************************************/
-                centr_->processImage(agentId_, j, gImageId_, descript, foundDescriptors, kpoints, matchedKeyPoints, 1, &res_);
+                centr_->processImage(agentId_, j, gImageId_, descript, foundDescriptors, kpoints, matchedKeyPoints, 1);
 
                 /*****************************************/
             }
@@ -106,5 +109,5 @@ void Agent::run()
         }
         gImageId_++;
     }
-        fRes_->insert({agentId_, res_});
+        //fRes_->insert({agentId_, res_});
 }

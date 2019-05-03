@@ -1,6 +1,9 @@
+#include <ros/ros.h>
 #include <chrono>
 #include <cstdio>
 #include <iostream>
+#include <sys/stat.h>
+#include <fstream>
 
 #include <boost/filesystem.hpp>
 #include <opencv2/xfeatures2d.hpp>
@@ -43,14 +46,37 @@ void getFilenames(const std::string &directory,
 
 int main(int argc, char **argv)
 {
+  // ros::NodeHandle n("~");
+  unsigned agents;
+  // std::string dataset;
+  // unsigned islandSize;
+  // int minConsecutiveLoops;
+  // unsigned minInliers;
+  // float nndrBf;
+  // double epDist;
+  // double confProb;
+  // n.param("numberAgents", agents, 3);
+  // n.param<std::string>("dataset", dataset, "Lip6In");
+  // n.param("islandSize", islandSize, 7);
+  // n.param("minConsecutiveLoops", minConsecutiveLoops, 5);
+  // n.param("minInliers", minInliers, 22);
+  // n.param("nndrBf", nndrBf, 0.8);
+  // n.param("epDist", epDist, 2);
+  // n.param("confProb", confProb, 0.985);
 
   std::cout << "Importing files..." << std::endl;
   std::vector<std::string> filenames; //import images
   getFilenames(argv[1], &filenames);
-  unsigned agents;
-
-  std::cout << "How many agents do you want to use? " << std::endl;
+  
+  std::cout << "Which is the maximum number of agents do you want to process? " << std::endl;
   std::cin >> agents;
+
+  std::string dataSetName = "Lip6In";
+  std::string folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/";
+
+  boost::filesystem::path res_dir = folderName + dataSetName;
+  boost::filesystem::remove_all(res_dir);
+  boost::filesystem::create_directory(res_dir);
 
   /******************Previous Code****************************/
   // unsigned nImages = filenames.size();
@@ -63,13 +89,49 @@ int main(int argc, char **argv)
     std::cout << "You should check the number of declared agents" << std::endl;
     return 0;
   }
-  std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> fResult;
-  std::cout << "Total number of images to import " << filenames.size() << std::endl;
-  obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, true);
-  std::cout << "Initiallizing central agents manager..." << std::endl;
-  LCDetectorMultiCentralized LCM(agents, &centralOb, 10, 0.3, &fResult, 7, 5, 22, 0.8, 2, 0.985);
-  std::cout << "Initialllizing agents..." << std::endl;
-  LCM.process(filenames);
+  for (unsigned i = 1; i <= agents; i++)
+  {
+    std::vector<std::vector<int>> fResult;
+    fResult.resize(filenames.size());
+    std::vector<int> aux;
+    aux.push_back(-1);
+    aux.push_back(-1);
+    for (unsigned j = 0; j < fResult.size(); j++)
+    {
+      fResult.at(j) = aux;
+    }
+
+    std::cout << "Total number of images to import " << filenames.size() << std::endl;
+    obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, true);
+
+    std::cout << "Initiallizing central agents manager..." << std::endl;
+    LCDetectorMultiCentralized LCM(i, &centralOb, 10, 0.3, &fResult, 7, 5, 22, 0.8, 2, 0.985);
+
+    std::cout << "Initialllizing agents..." << std::endl;
+    LCM.process(filenames);
+
+    std::cout << "---" << std::endl;
+    std::cout << "All images processed with " << i << " agent(s)" << std::endl;
+
+    std::cout << "Storing results to a file..." << std::endl
+              << std::endl;
+
+    std::string pathName = folderName + dataSetName + "/" + std::to_string(i) + ".txt";
+    char outputFileName[500];
+    sprintf(outputFileName, "%s", pathName.c_str());
+    std::ofstream outputFile(outputFileName);
+
+    for (unsigned j = 0; j < fResult.size(); j++)
+    {
+      //std::cout << j << " | " << fResult[j].size() << std::endl;
+      outputFile << fResult[j][0] << "\t";
+      outputFile << fResult[j][1] << "\t";
+      outputFile << std::endl;
+    }
+    outputFile.close();
+  }
+  //std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> fResult;
+
   // std::cout << fResult.size() << "---"  << std::endl;
 
   // unsigned nImages = filenames.size() / agents;
@@ -156,8 +218,6 @@ int main(int argc, char **argv)
   //   usleep(100000);
   // }
 
-  std::cout << "---" << std::endl;
-  std::cout << "All images processed" << std::endl;
   // cv::destroyAllWindows();
   return 0;
 }
