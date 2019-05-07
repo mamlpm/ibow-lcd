@@ -10,8 +10,8 @@ function loops = detect_loops(loops_file, prev, cons_loops, inliers, nAgents)
     for i=1:nimages
         currAgent = curr_loops(i, 4);
         overlap = curr_loops(i, 3) == 1;
-        if i < prev
-            % Discarding previous images
+        if curr_loops(i, 1) == -1 && curr_loops(i, 2) == -1 && curr_loops(i, 3) == -1 && curr_loops(i, 4) == -1 
+            % Discarding non porcessed images
             loops(i, 1) = i - 1;
             loops(i, 2) = 2;
             loops(i, 3) = 0;
