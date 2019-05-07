@@ -21,9 +21,13 @@ LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
     islandOffset_ = island_size / 2;
     currentImagePerAgent_.resize(agents);
     lastLcIsland_.resize(agents);
+    for (unsigned i = 0; i < agents; i++)
+    {
+        consecutiveLoops_.push_back(0);
+    }
     prevDescs_.resize(agents);
     prevKps_.resize(agents);
-    consecutiveLoops_ = 0;
+    // consecutiveLoops_ = 0;
     minConsecutiveLoops_ = min_consecutive_loops;
     minInliers_ = min_inliers;
     nndrBf_ = nndr_bf;
@@ -144,6 +148,8 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             shouldGetOut = 1;
         }
 
+        bool overlap = 0;
+
         if (!shouldGetOut)
         {
             ibow_lcd::IslanDistributed island = islands[0];
@@ -155,13 +161,13 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             }
 
             lastLcIsland_[agentN] = island;
-            bool overlap = p_islands.size() != 0;
+            overlap = p_islands.size() != 0;
 
             unsigned best_img = island.img_id;
             unsigned bestAgentNum = island.agentId;
 
             // Assessing the loop
-            if (consecutiveLoops_ > minConsecutiveLoops_ && overlap)
+            if (consecutiveLoops_[agentN] > minConsecutiveLoops_ && overlap)
             {
                 // std::cout << "Hola 1" << std::endl;
                 // LOOP can be considered as detected
@@ -171,7 +177,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                 rslt.inliers = 0;
                 // Store the last result
                 lastLcResult_ = rslt;
-                consecutiveLoops_++;
+                consecutiveLoops_[agentN]++;
             }
             else
             {
@@ -206,7 +212,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                     rslt.inliers = inliers;
                     // Store the last result
                     lastLcResult_ = rslt;
-                    consecutiveLoops_++;
+                    consecutiveLoops_[agentN]++;
                 }
                 else
                 {
@@ -216,7 +222,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                     rslt.TagentId = bestAgentNum;
                     rslt.inliers = inliers;
                     lastLcResult_.status = LC_NOT_ENOUGH_INLIERS;
-                    consecutiveLoops_ = 0;
+                    consecutiveLoops_[agentN] = 0;
                 }
             }
         }
@@ -255,6 +261,8 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
         std::vector<int> rlt;
         rlt.push_back(static_cast<int>(globalTrainImage));
         rlt.push_back(static_cast<int>(rslt.inliers));
+        rlt.push_back(static_cast<int>(overlap));
+        rlt.push_back(static_cast<int>(agentN));
         fReslt_->at(globalQueryImage) = rlt;
         //std::cout << globalQueryImage << std::endl;
     }

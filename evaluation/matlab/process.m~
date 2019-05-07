@@ -1,4 +1,4 @@
-function [PR, imgvssize, imgvstime] = process(directory, filesNumber, processeDataset, p, min_consecutive_loops, nAgents, gt_neigh, compensate)
+function [PR, imgvssize, imgvstime] = process(directory, filesNumber, processeDataset, gt_neigh, compensate)
 
     % Establishing default parameters
     if nargin < 4
@@ -7,7 +7,7 @@ function [PR, imgvssize, imgvstime] = process(directory, filesNumber, processeDa
     elseif nargin == 4
         compensate = false;
     end
-    for fileNumber = 1:filesNumber
+    for fileNumber = 0:filesNumber
         % Getting dataset information and loading files
         loops_filename = strcat(directory, int2str(fileNumber), '.txt');
         loops_file = load(loops_filename);
@@ -23,30 +23,25 @@ function [PR, imgvssize, imgvstime] = process(directory, filesNumber, processeDa
         % Ground truth  
         if processeDataset == 'Lip6In'
             gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/Lip6_indoor/groundtruth.mat';
-            coords_filename = '';
         elseif porcesseDataset == 'Lip6Out'
             gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/Lip6_outdoor/groundtruth.mat';
-            coords_filename = '';
         elseif processeDataset == 'CityCentre'
             gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/CityCentre/groundtruth.mat';
-            coords_filename = '/home/mamlpm/Documentos/TrabajoFinMast/ImageCollectionCoordinates.mat';
         elseif processeDataset == 'KITTI00'
-            gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/00/groundtruth.mat';
-            coords_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/00/imageCoords.mat';
+            gt_filename = 
         else
-            gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/05/groundtruth.mat';
-            coords_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/05/imageCoords05.mat';
+            gt_filename = 
         end
-        
+        gt_filename = json_info.gt_file;
         gt_file = load(gt_filename);
 
         % Coordinate file    
-%         coords_filename = json_info.coords_file;
+        coords_filename = json_info.coords_file;
         %coords_file = load(coords_filename);
 
         % Reading parameters
-        prev = p;
-        cons_loops = min_consecutive_loops;
+        prev = json_info.p;
+        cons_loops = json_info.min_consecutive_loops;
         %inliers = json_info.min_inliers;
 
         % Obtaining P/R Curve varying the number of inliers 

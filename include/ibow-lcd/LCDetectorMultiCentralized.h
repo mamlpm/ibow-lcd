@@ -127,7 +127,7 @@ private:
   std::vector<std::vector<int>> *fReslt_;
   LCDetectorMultiCentralizedResult lastLcResult_;
   std::vector<ibow_lcd::IslanDistributed> lastLcIsland_;
-  int consecutiveLoops_;
+  std::vector<int> consecutiveLoops_;
   int minConsecutiveLoops_;
   std::vector<std::vector<cv::Mat>> prevDescs_;
   std::vector<std::vector<std::vector<cv::KeyPoint>>> prevKps_;

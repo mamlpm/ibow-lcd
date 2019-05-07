@@ -1,4 +1,4 @@
-function loops = detect_loops(loops_file, prev, cons_loops, inliers)
+function loops = detect_loops(loops_file, prev, cons_loops, inliers, nAgents)
 
     curr_loops = loops_file;
     curr_loops_size = size(curr_loops);
@@ -6,9 +6,10 @@ function loops = detect_loops(loops_file, prev, cons_loops, inliers)
     loops = zeros(nimages, 4);
     
     % Processing each image to generate the corresponding response
-    consecutive_loops = 0;
+    consecutive_loops = zeros(1, nAgents);
     for i=1:nimages
-        overlap = curr_loops(i, 4) == 1;
+        currAgent = curr_loops(i, 4);
+        overlap = curr_loops(i, 3) == 1;
         if i < prev
             % Discarding previous images
             loops(i, 1) = i - 1;

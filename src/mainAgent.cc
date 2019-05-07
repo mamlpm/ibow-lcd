@@ -46,42 +46,83 @@ void getFilenames(const std::string &directory,
 
 int main(int argc, char **argv)
 {
-  // ros::NodeHandle n("~");
+  ros::init(argc, argv, "ibow-lcd-multi");
+  ros::NodeHandle n("~");
   unsigned agents;
-  // std::string dataset;
-  // unsigned islandSize;
-  // int minConsecutiveLoops;
-  // unsigned minInliers;
-  // float nndrBf;
-  // double epDist;
-  // double confProb;
-  // n.param("numberAgents", agents, 3);
-  // n.param<std::string>("dataset", dataset, "Lip6In");
-  // n.param("islandSize", islandSize, 7);
-  // n.param("minConsecutiveLoops", minConsecutiveLoops, 5);
-  // n.param("minInliers", minInliers, 22);
-  // n.param("nndrBf", nndrBf, 0.8);
-  // n.param("epDist", epDist, 2);
-  // n.param("confProb", confProb, 0.985);
+  unsigned p;
+  double mScore;
+  std::string dataSetName;
+  unsigned islandSize;
+  int minConsecutiveLoops;
+  unsigned minInliers;
+  float nndrBf;
+  double epDist;
+  double confProb;
+  if (true)
+  {
+    int tAgents;
+    int tislandSize;
+    int tminInliers;
+    int tP;
+
+    n.param<int>("numberAgents", tAgents, 3);
+    n.param<int>("p", tP, 10);
+    n.param<double>("mScore", mScore, 0.3);
+    n.param<std::string>("dataset", dataSetName, "Lip6In");
+    n.param<int>("islandSize", tislandSize, 7);
+    n.param<int>("minConsecutiveLoops", minConsecutiveLoops, 5);
+    n.param<int>("minInliers", tminInliers, 22);
+    n.param<float>("nndrBf", nndrBf, 0.8);
+    n.param<double>("epDist", epDist, 2);
+    n.param<double>("confProb", confProb, 0.985);
+
+    p = static_cast<unsigned>(tP);
+    agents = static_cast<unsigned>(tAgents);
+    islandSize = static_cast<unsigned>(tislandSize);
+    minInliers = static_cast<unsigned>(tminInliers);
+  }
+
+  std::string datasetPad;
+
+  if (dataSetName == "Lip6In")
+  {
+    datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/Lip6_indoor/images";
+  }else if (dataSetName == "Lip6Out")
+  {
+    datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/Lip6_outdoor/images";
+  }else if (dataSetName == "CityCentre")
+  {
+    datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/CityCentre/images";
+  }else if (dataSetName == "KITTI00")
+  {
+    datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/00/images";
+  }else
+  {
+    datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/05/images";
+  }
+
+  std::cout << "Importing Parameters..." << std::endl
+            << "Max number of agents to process -> " << agents << std::endl
+            << "P -> " << p << std::endl
+            << "Minimum score -> " << mScore << std::endl
+            << "Data set name -> " << dataSetName << std::endl
+            << "Island size -> " << islandSize << std::endl
+            << "Minimum consecutive loops -> " << minConsecutiveLoops << std::endl
+            << "Minimum number of inliers -> " << minInliers << std::endl
+            << "nndrBf -> " << nndrBf << std::endl
+            << "Epipolar distance -> " << epDist << std::endl
+            << "confidence probability -> " << confProb << std::endl
+            << "Params imported" << std::endl;
 
   std::cout << "Importing files..." << std::endl;
   std::vector<std::string> filenames; //import images
-  getFilenames(argv[1], &filenames);
-  
-  std::cout << "Which is the maximum number of agents do you want to process? " << std::endl;
-  std::cin >> agents;
+  getFilenames(datasetPad, &filenames);
 
-  std::string dataSetName = "Lip6In";
   std::string folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/";
 
   boost::filesystem::path res_dir = folderName + dataSetName;
   boost::filesystem::remove_all(res_dir);
   boost::filesystem::create_directory(res_dir);
-
-  /******************Previous Code****************************/
-  // unsigned nImages = filenames.size();
-  // unsigned imagesPerAgent = nImages / agents;
-  /***********************************************************/
 
   std::cout << "Files imported." << std::endl;
   if (agents > filenames.size() || agents == 0)
@@ -96,6 +137,8 @@ int main(int argc, char **argv)
     std::vector<int> aux;
     aux.push_back(-1);
     aux.push_back(-1);
+    aux.push_back(-1);
+    aux.push_back(-1);
     for (unsigned j = 0; j < fResult.size(); j++)
     {
       fResult.at(j) = aux;
@@ -105,7 +148,7 @@ int main(int argc, char **argv)
     obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, true);
 
     std::cout << "Initiallizing central agents manager..." << std::endl;
-    LCDetectorMultiCentralized LCM(i, &centralOb, 10, 0.3, &fResult, 7, 5, 22, 0.8, 2, 0.985);
+    LCDetectorMultiCentralized LCM(i, &centralOb, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb);
 
     std::cout << "Initialllizing agents..." << std::endl;
     LCM.process(filenames);
@@ -126,6 +169,8 @@ int main(int argc, char **argv)
       //std::cout << j << " | " << fResult[j].size() << std::endl;
       outputFile << fResult[j][0] << "\t";
       outputFile << fResult[j][1] << "\t";
+      outputFile << fResult[j][2] << "\t";
+      outputFile << fResult[j][3] << "\t";
       outputFile << std::endl;
     }
     outputFile.close();
