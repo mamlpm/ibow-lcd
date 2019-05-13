@@ -1,0 +1,25 @@
+<launch>
+
+    <node name = "ibowLCD_dist" pkg = "ibow-lcd" type = "ibowLCD_dist" output = "screen">
+        <!-- Serial port name-->
+        <param name="numberAgents" value = "10"/>
+        <!-- <param name = "dataset" value = "Lip6In"/> -->
+        <!-- <param name = "dataset" value = "Lip6Out"/> -->
+        <!-- <param name = "dataset" value = "CityCentre"/> -->
+        <param name = "dataset" value = "KITTI00"/>
+        <!-- <param name = "dataset" value = "KITTI05"/> -->
+
+        <param name = "filter" value = "1"/>
+        <param name = "original" value = "0"/>
+        <param name = "p" value = "50"/>
+        <param name = "mScore" value = "0.1"/>
+        <param name = "islandSize" value = "11"/>
+        <param name = "minConsecutiveLoops" value = "70"/>
+        <param name = "minInliers" value = "40"/>
+        <param name = "nndrBf" value = "0.6"/>
+        <param name = "epDist" value = "2"/>
+        <param name = "confProb" value = "0.985"/>
+
+    </node>
+
+</launch>

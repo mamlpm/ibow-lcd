@@ -10,7 +10,9 @@ LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
                                                        unsigned min_inliers,
                                                        float nndr_bf,
                                                        double epDist,
-                                                       double confProb)
+                                                       double confProb,
+                                                       bool filter,
+                                                       bool original)
 {
     agents_ = agents;
     centralOb_ = centralOb;
@@ -33,6 +35,8 @@ LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
     nndrBf_ = nndr_bf;
     epDist_ = epDist;
     confProb_ = confProb;
+    filter_ = filter;
+    original_ = original;
 }
 
 void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
@@ -69,7 +73,7 @@ void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
 
     for (unsigned i = 0; i < filesPerAgent_.size(); i++)
     {
-        Agent *a = new Agent(this, filesPerAgent_[i], i, firstImage[i], &currentImagePerAgent_);
+        Agent *a = new Agent(this, filesPerAgent_[i], i, firstImage[i], &currentImagePerAgent_, filter_, original_);
         // Agent *a = new Agent(this, filesPerAgent_[i], i, firstImage[i], fReslt_, &currentImagePerAgent_);
         agentSim_.create_thread(boost::bind(&Agent::run, a));
     }
@@ -84,7 +88,8 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                                               const cv::Mat &stableDescs,
                                               std::vector<cv::KeyPoint> keyPoints,
                                               std::vector<cv::KeyPoint> stableKeyPoints,
-                                              bool lookForLoop)
+                                              bool lookForLoop,
+                                              bool aImage)
 {
     locker_.lock();
     // Searching for loops
@@ -227,7 +232,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             }
         }
 
-        std::cout << "---" << std::endl;
+        // std::cout << "---" << std::endl;
 
         unsigned globalQueryImage = globalImagePointer_[rslt.QagentId] + rslt.query_id;
         unsigned globalTrainImage = globalImagePointer_[rslt.TagentId] + rslt.train_id;
@@ -276,7 +281,10 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
     // }    
 
     // Adding new image to the index
-    addImage(imageId, gImageID, agentN, stableKeyPoints, stableDescs);
+    if (aImage)
+    {
+        addImage(imageId, gImageID, agentN, stableKeyPoints, stableDescs);
+    }
     locker_.unlock();
 }
 

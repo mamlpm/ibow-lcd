@@ -4,7 +4,9 @@ Agent::Agent(LCDetectorMultiCentralized *centralCerv,
              std::vector<std::string> &flNames,
              unsigned agentId,
              unsigned firstImageId,
-             std::vector<unsigned>* currImPAgent)
+             std::vector<unsigned> *currImPAgent,
+             bool filter,
+             bool original)
 {
     centr_ = centralCerv;
     agentId_ = agentId;
@@ -12,6 +14,8 @@ Agent::Agent(LCDetectorMultiCentralized *centralCerv,
     gImageId_ = firstImageId;
     //fRes_ = fRes;
     currImPAgent_ = currImPAgent;
+    filter_ = filter;
+    original_ = original;
     for (unsigned i = 0; i < flNames.size(); i++)
     {
         fileNames_.push_back(flNames[i]);
@@ -25,10 +29,11 @@ unsigned Agent::getId()
 
 void Agent::run()
 {
-    cv::Ptr<cv::FastFeatureDetector> detector =
-        cv::FastFeatureDetector::create(); //create a features detector
-    cv::Ptr<cv::xfeatures2d::BriefDescriptorExtractor> descriptor =
-        cv::xfeatures2d::BriefDescriptorExtractor::create(); //create a descriptor extractor
+    // cv::Ptr<cv::FastFeatureDetector> detector =
+    //     cv::ORB::create(1500); //create a features detector
+    // cv::Ptr<cv::xfeatures2d::BriefDescriptorExtractor> descriptor =
+    //     cv::xfeatures2d::BriefDescriptorExtractor::create(); //create a descriptor extractor
+    cv::Ptr<cv::Feature2D> detector = cv::ORB::create(1500); // Default params
     for (unsigned j = 0; j < fileNames_.size(); j++)
     {
         currImPAgent_->at(agentId_) = j;
@@ -39,9 +44,9 @@ void Agent::run()
         // locker_.unlock();
         cv::Mat descript;
 
-        detector->detect(importedImage, kpoints);              //detect all key points
-        cv::KeyPointsFilter::retainBest(kpoints, 1000);        //filter those key points
-        descriptor->compute(importedImage, kpoints, descript); //descript those key points
+        detector->detect(importedImage, kpoints);            //detect all key points
+        cv::KeyPointsFilter::retainBest(kpoints, 1000);      //filter those key points
+        detector->compute(importedImage, kpoints, descript); //descript those key points
 
         //Cheking if there is any previous image
         if (j == 0 || kpoints.size() == 0)
@@ -53,12 +58,13 @@ void Agent::run()
                 previousImage_ = importedImage; //update the last seen image
                 prevDescriptors_ = descript;    //Update previous seen descrpitors matrix
 
-                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 0);
-            }else
-            {
-                std::cerr << std::endl << "There are no KeyPoints found" << std::endl;
+                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 0, 1);
             }
-            
+            else
+            {
+                std::cerr << std::endl
+                          << "There are no KeyPoints found" << std::endl;
+            }
         }
         else
         {
@@ -97,11 +103,31 @@ void Agent::run()
                 /***************************************/
 
                 /*****************************************/
-                centr_->processImage(agentId_, j, gImageId_, descript, foundDescriptors, kpoints, matchedKeyPoints, 1);
+                if (filter_)
+                {
+                    std::cout << "---" << std::endl
+                              << "Processing filtered images ";
+                    if (original_)
+                    {
+                        std::cout << "(Original algorithm)" << std::endl;
+                    }else
+                    {
+                        std::cout << "(New algorithm)" << std::endl;
+                    }
+                    centr_->processImage(agentId_, j, gImageId_, descript, foundDescriptors, kpoints, matchedKeyPoints, 1, 1);
+                }
 
                 /*****************************************/
+            }else if (filter_ && !original_)
+            {
+                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 0);
             }
-
+            if (!filter_)
+            {
+                std::cout << "---" << std::endl
+                          << "Processing non filtered images" << std::endl;
+                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 1);
+            }
             prevKeyPoints_.clear();         //clean the previous key points vector
             prevKeyPoints_ = kpoints;       //fill the previous key points vector
             previousImage_ = importedImage; //update the last seen image
@@ -109,5 +135,5 @@ void Agent::run()
         }
         gImageId_++;
     }
-        //fRes_->insert({agentId_, res_});
+    //fRes_->insert({agentId_, res_});
 }

@@ -1,10 +1,10 @@
-function [PR, imgvssize, imgvstime] = process(directory, filesNumber, processeDataset, p, min_consecutive_loops, nAgents, gt_neigh, compensate)
+function [PR] = process(directory, filesNumber, processeDataset, min_consecutive_loops, nAgents, gt_neigh, compensate)
 
     % Establishing default parameters
-    if nargin < 4
+    if nargin < 6
         gt_neigh = 20;
         compensate = false;
-    elseif nargin == 4
+    elseif nargin == 6
         compensate = false;
     end
     for fileNumber = 1:filesNumber
@@ -21,21 +21,21 @@ function [PR, imgvssize, imgvstime] = process(directory, filesNumber, processeDa
 %         json_info = jsondecode(str);
 
         % Ground truth  
-        if processeDataset == 'Lip6In'
+        if strcmp(processeDataset, 'Lip6In')
             gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/Lip6_indoor/groundtruth.mat';
-            coords_filename = '';
-        elseif porcesseDataset == 'Lip6Out'
+%             coords_filename = '';
+        elseif strcmp(processeDataset, 'Lip6Out')
             gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/Lip6_outdoor/groundtruth.mat';
-            coords_filename = '';
-        elseif processeDataset == 'CityCentre'
+%             coords_filename = '';
+        elseif strcmp(processeDataset, 'CityCentre')
             gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/CityCentre/groundtruth.mat';
-            coords_filename = '/home/mamlpm/Documentos/TrabajoFinMast/ImageCollectionCoordinates.mat';
-        elseif processeDataset == 'KITTI00'
+%             coords_filename = '/home/mamlpm/Documentos/TrabajoFinMast/ImageCollectionCoordinates.mat';
+        elseif strcmp(processeDataset, 'KITTI00')
             gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/00/groundtruth.mat';
-            coords_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/00/imageCoords.mat';
+%             coords_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/00/imageCoords.mat';
         else
             gt_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/05/groundtruth.mat';
-            coords_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/05/imageCoords05.mat';
+%             coords_filename = '/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/05/imageCoords05.mat';
         end
         
         gt_file = load(gt_filename);
@@ -45,7 +45,6 @@ function [PR, imgvssize, imgvstime] = process(directory, filesNumber, processeDa
         %coords_file = load(coords_filename);
 
         % Reading parameters
-        prev = p;
         cons_loops = min_consecutive_loops;
         %inliers = json_info.min_inliers;
 
@@ -57,10 +56,10 @@ function [PR, imgvssize, imgvstime] = process(directory, filesNumber, processeDa
         I_max = 0;
         for i=1:500
             % Processing the resulting file to transform the format
-            loops_trans_file = detect_loops(loops_file, prev, cons_loops, i);
+            loops_trans_file = detect_loops(loops_file, cons_loops, i, nAgents);
             [Pr, Re] = compute_PR(loops_trans_file, gt_file, gt_neigh, compensate, false);
             P = [P, Pr];
-            R = [R, Re];
+            R = [R, Re];            
 
             if Pr > P_max || (Pr == P_max && Re > R_max)
                 P_max = Pr;
@@ -90,27 +89,26 @@ function [PR, imgvssize, imgvstime] = process(directory, filesNumber, processeDa
         R = R_a;
 
         % Returning the information for P/R
-        PR.P = P;
-        PR.R = R;
-        PR.P_max = P_max;
-        PR.R_max = R_max;
-        PR.I_max = I_max;
+        PR(fileNumber).P = P;
+        PR(fileNumber).R = R;
+        PR(fileNumber).P_max = P_max;
+        PR(fileNumber).R_max = R_max;
+        PR(fileNumber).I_max = I_max;
 
         % Computing response and index size vectors
-        curr_loops_size = size(loops_file);
-        nimages = curr_loops_size(1);
-        imgvssize.img = [];
-        imgvssize.size = [];
-        imgvstime.img = [];
-        imgvstime.time = [];
-        for i=1:nimages
+%         curr_loops_size = size(loops_file);
+%         nimages = curr_loops_size(1);
+%         imgvssize.img = [];
+%         imgvssize.size = [];
+%         imgvstime.img = [];
+%         imgvstime.time = [];
+%         for i=1:nimages
             % Images vs Index Size
-            imgvssize.img(i) = i;
-            imgvssize.size(i) = loops_file(i, 6);
+%             imgvssize.img(i) = i;
+%             imgvssize.size(i) = loops_file(i, 6);
 
             % Images vs Time
-            imgvstime.img(i) = i;
-            imgvstime.time(i) = loops_file(i, 7);
+%             imgvstime.img(i) = i;
+%             imgvstime.time(i) = loops_file(i, 7);
         end
-    end
 end

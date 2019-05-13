@@ -62,7 +62,9 @@ public:
                              unsigned min_inliers,
                              float nndr_bf,
                              double epDist,
-                             double confProb);
+                             double confProb,
+                             bool filter,
+                             bool original);
 
   void process(std::vector<std::string> &imageFiles);
 
@@ -73,7 +75,8 @@ public:
                     const cv::Mat &stableDescs,
                     std::vector<cv::KeyPoint> keyPoints,
                     std::vector<cv::KeyPoint> stableKeyPoints,
-                    bool lookForLoop);
+                    bool lookForLoop,
+                    bool aImage);
 
   void filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
                      std::vector<cv::DMatch> *filteredCandidates);
@@ -135,5 +138,7 @@ private:
   float nndrBf_;
   double epDist_;
   double confProb_;
+  bool filter_;
+  bool original_;
 };
 #endif

@@ -58,12 +58,17 @@ int main(int argc, char **argv)
   float nndrBf;
   double epDist;
   double confProb;
+  bool filter;
+  bool original;
+
   if (true)
   {
     int tAgents;
     int tislandSize;
     int tminInliers;
     int tP;
+    int tFilter;
+    int tOriginal;
 
     n.param<int>("numberAgents", tAgents, 3);
     n.param<int>("p", tP, 10);
@@ -75,7 +80,11 @@ int main(int argc, char **argv)
     n.param<float>("nndrBf", nndrBf, 0.8);
     n.param<double>("epDist", epDist, 2);
     n.param<double>("confProb", confProb, 0.985);
-
+    n.param<int>("filter", tFilter, 1);
+    n.param<int>("original", tOriginal, 1);
+    
+    filter = static_cast<bool>(tFilter);
+    original = static_cast<bool>(tOriginal);
     p = static_cast<unsigned>(tP);
     agents = static_cast<unsigned>(tAgents);
     islandSize = static_cast<unsigned>(tislandSize);
@@ -87,16 +96,20 @@ int main(int argc, char **argv)
   if (dataSetName == "Lip6In")
   {
     datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/Lip6_indoor/images";
-  }else if (dataSetName == "Lip6Out")
+  }
+  else if (dataSetName == "Lip6Out")
   {
     datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/Lip6_outdoor/images";
-  }else if (dataSetName == "CityCentre")
+  }
+  else if (dataSetName == "CityCentre")
   {
     datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/CityCentre/images";
-  }else if (dataSetName == "KITTI00")
+  }
+  else if (dataSetName == "KITTI00")
   {
     datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/00/images";
-  }else
+  }
+  else
   {
     datasetPad = "/home/mamlpm/Documentos/TrabajoFinMaster/datasets/KITTI/05/images";
   }
@@ -112,13 +125,25 @@ int main(int argc, char **argv)
             << "nndrBf -> " << nndrBf << std::endl
             << "Epipolar distance -> " << epDist << std::endl
             << "confidence probability -> " << confProb << std::endl
+            << "Filter? -> " << filter << std::endl
             << "Params imported" << std::endl;
 
   std::cout << "Importing files..." << std::endl;
   std::vector<std::string> filenames; //import images
   getFilenames(datasetPad, &filenames);
 
-  std::string folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/";
+  std::string folderName;
+  if (filter && original)
+  {
+    folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/filtrados/";
+  }else if (filter && !original)
+  {
+    folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/filtradosNuevo/";
+  }else
+  {
+    folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/noFiltrados/";
+  }
+  
 
   boost::filesystem::path res_dir = folderName + dataSetName;
   boost::filesystem::remove_all(res_dir);
@@ -148,7 +173,7 @@ int main(int argc, char **argv)
     obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, true);
 
     std::cout << "Initiallizing central agents manager..." << std::endl;
-    LCDetectorMultiCentralized LCM(i, &centralOb, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb);
+    LCDetectorMultiCentralized LCM(i, &centralOb, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb, filter, original);
 
     std::cout << "Initialllizing agents..." << std::endl;
     LCM.process(filenames);
