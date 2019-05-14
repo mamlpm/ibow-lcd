@@ -10,7 +10,7 @@
         <!-- <param name = "dataset" value = "KITTI05"/> -->
 
         <param name = "filter" value = "1"/>
-        <param name = "original" value = "0"/>
+        <param name = "original" value = "1"/>
         <param name = "p" value = "50"/>
         <param name = "mScore" value = "0.1"/>
         <param name = "islandSize" value = "7"/>

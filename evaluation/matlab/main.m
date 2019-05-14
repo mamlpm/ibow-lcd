@@ -1,8 +1,8 @@
 % Script for obtaining the required results for IROS'18
 clear all
 close all
-filter = 0;
-original = 0;
+filter = 1;
+original = 1;
 if filter == 1 && original == 1
     base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/filtrados/';
 elseif filter == 1 && original == 0
@@ -18,8 +18,8 @@ addpath('AcademicFigures/');
 agentsNumber = 10;
 
 % Obtaining CityCenter results
-curr_dir = strcat(base_dir, 'CityCentre/')
-[PR_CC] = process(curr_dir, agentsNumber, 'CityCentre', 5, agentsNumber, gt_neigh, compensate);
+% curr_dir = strcat(base_dir, 'CityCentre/')
+% [PR_CC] = process(curr_dir, agentsNumber, 'CityCentre', 5, agentsNumber, gt_neigh, compensate);
 % imgvstime_CC.time = smooth(imgvstime_CC.time);
 
 % curr_dir = strcat(base_dir, 'NewCollege/');
@@ -30,16 +30,16 @@ curr_dir = strcat(base_dir, 'Lip6In/')
 [PR_L6I] = process(curr_dir, agentsNumber, 'Lip6In', 5, agentsNumber, gt_neigh, compensate);
 % imgvstime_L6I.time = smooth(imgvstime_L6I.time);
 
-curr_dir = strcat(base_dir, 'Lip6Out/')
-[PR_L6O] = process(curr_dir, agentsNumber, 'Lip6Out', 5, agentsNumber, gt_neigh, compensate);
+% curr_dir = strcat(base_dir, 'Lip6Out/')
+% [PR_L6O] = process(curr_dir, agentsNumber, 'Lip6Out', 5, agentsNumber, gt_neigh, compensate);
 % imgvstime_L6O.time = smooth(imgvstime_L6O.time);
 % 
-curr_dir = strcat(base_dir, 'KITTI00/')
-[PR_K0] = process(curr_dir, agentsNumber, 'KITTI00', 5, agentsNumber, gt_neigh, compensate);
+% curr_dir = strcat(base_dir, 'KITTI00/')
+% [PR_K0] = process(curr_dir, agentsNumber, 'KITTI00', 5, agentsNumber, gt_neigh, compensate);
 % imgvstime_K0.time = smooth(imgvstime_K0.time);
 % 
-curr_dir = strcat(base_dir, 'KITTI05/')
-[PR_K5] = process(curr_dir, agentsNumber, 'KITTI05', 5, agentsNumber, gt_neigh, compensate);
+% curr_dir = strcat(base_dir, 'KITTI05/')
+% [PR_K5] = process(curr_dir, agentsNumber, 'KITTI05', 5, agentsNumber, gt_neigh, compensate);
 % imgvstime_K5.time = smooth(imgvstime_K5.time);
 
 % curr_dir = strcat(base_dir, 'KITTI06/');
@@ -61,97 +61,97 @@ ylabel('Precision');
 xlim([0, 1]);
 ylim([0.4, 1.02]);
 hold off;
-if filter == 1 && original == 1
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGItrad.png');
-elseif filter == 1 && original == 0
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGInew.png');
-else
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGInonFiltered.png');
-end
+% if filter == 1 && original == 1
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGItrad.png');
+% elseif filter == 1 && original == 0
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGInew.png');
+% else
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGInonFiltered.png');
+% end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-figure;
-hold on;
-PRSize = size(PR_L6O);
-
-for i = 1:agentsNumber
-    plot(PR_L6O(i).R, PR_L6O(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
-end
-legend show
-xlabel('Recall');
-ylabel('Precision');
-xlim([0, 1]);
-ylim([0.4, 1.02]);
-hold off;
-if filter == 1 && original == 1
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGOtrad.png');
-elseif filter == 1 && original == 0
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGOnew.png');
-else
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGOnonFiltered.png');
-end
+% figure;
+% hold on;
+% PRSize = size(PR_L6O);
+% 
+% for i = 1:agentsNumber
+%     plot(PR_L6O(i).R, PR_L6O(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
+% end
+% legend show
+% xlabel('Recall');
+% ylabel('Precision');
+% xlim([0, 1]);
+% ylim([0.4, 1.02]);
+% hold off;
+% if filter == 1 && original == 1
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGOtrad.png');
+% elseif filter == 1 && original == 0
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGOnew.png');
+% else
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/LGOnonFiltered.png');
+% end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-figure;
-hold on;
-PRSize = size(PR_CC);
-
-for i = 1:agentsNumber
-    plot(PR_CC(i).R, PR_CC(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
-end
-legend show
-xlabel('Recall');
-ylabel('Precision');
-xlim([0, 1]);
-ylim([0.4, 1.02]);
-hold off;
-if filter == 1 && original == 1
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/CCtrad.png');
-elseif filter == 1 && original == 0
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/CCnew.png');
-else
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/CCnonFiltered.png');
-end
+% figure;
+% hold on;
+% PRSize = size(PR_CC);
+% 
+% for i = 1:agentsNumber
+%     plot(PR_CC(i).R, PR_CC(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
+% end
+% legend show
+% xlabel('Recall');
+% ylabel('Precision');
+% xlim([0, 1]);
+% ylim([0.4, 1.02]);
+% hold off;
+% if filter == 1 && original == 1
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/CCtrad.png');
+% elseif filter == 1 && original == 0
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/CCnew.png');
+% else
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/CCnonFiltered.png');
+% end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-figure;
-hold on;
-PRSize = size(PR_K0);
-
-for i = 1:agentsNumber
-    plot(PR_K0(i).R, PR_K0(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
-end
-legend show
-xlabel('Recall');
-ylabel('Precision');
-xlim([0, 1]);
-ylim([0.4, 1.02]);
-hold off;
-if filter == 1 && original == 1
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K0trad.png');
-elseif filter == 1 && original == 0
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K0new.png');
-else
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K0nonFiltered.png');
-end
+% figure;
+% hold on;
+% PRSize = size(PR_K0);
+% 
+% for i = 1:agentsNumber
+%     plot(PR_K0(i).R, PR_K0(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
+% end
+% legend show
+% xlabel('Recall');
+% ylabel('Precision');
+% xlim([0, 1]);
+% ylim([0.4, 1.02]);
+% hold off;
+% if filter == 1 && original == 1
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K0trad.png');
+% elseif filter == 1 && original == 0
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K0new.png');
+% else
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K0nonFiltered.png');
+% end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-figure;
-hold on;
-PRSize = size(PR_K5);
-
-for i = 1:agentsNumber
-    plot(PR_K5(i).R, PR_K5(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
-end
-legend show
-xlabel('Recall');
-ylabel('Precision');
-xlim([0, 1]);
-ylim([0.4, 1.02]);
-hold off;
-if filter == 1 && original == 1
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K5trad.png');
-elseif filter == 1 && original == 0
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K5new.png');
-else
-    saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K5nonFiltered.png');
-end
+% figure;
+% hold on;
+% PRSize = size(PR_K5);
+% 
+% for i = 1:agentsNumber
+%     plot(PR_K5(i).R, PR_K5(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
+% end
+% legend show
+% xlabel('Recall');
+% ylabel('Precision');
+% xlim([0, 1]);
+% ylim([0.4, 1.02]);
+% hold off;
+% if filter == 1 && original == 1
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K5trad.png');
+% elseif filter == 1 && original == 0
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K5new.png');
+% else
+%     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K5nonFiltered.png');
+% end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 print('-depsc', strcat(base_dir, 'PR_curves'));
 
