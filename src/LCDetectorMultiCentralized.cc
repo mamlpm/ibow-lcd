@@ -286,7 +286,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
         addImage(imageId, gImageID, agentN, stableKeyPoints, stableDescs);
     }
 
-    std::cout << "There are " << centralOb_->numDescriptors() << " visual words in the diccionary." << std::endl;
+    std::cout << "There are " << centralOb_->numDescriptors() << " visual words in the dictionary." << std::endl;
     locker_.unlock();
 }
 

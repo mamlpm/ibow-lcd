@@ -50,6 +50,7 @@ int main(int argc, char **argv)
   ros::NodeHandle n("~");
   unsigned agents;
   unsigned p;
+  unsigned step;
   double mScore;
   std::string dataSetName;
   unsigned islandSize;
@@ -60,6 +61,7 @@ int main(int argc, char **argv)
   double confProb;
   bool filter;
   bool original;
+  bool purge;
 
   if (true)
   {
@@ -69,6 +71,8 @@ int main(int argc, char **argv)
     int tP;
     int tFilter;
     int tOriginal;
+    int tPurge;
+    int tStep;
 
     n.param<int>("numberAgents", tAgents, 3);
     n.param<int>("p", tP, 10);
@@ -82,9 +86,14 @@ int main(int argc, char **argv)
     n.param<double>("confProb", confProb, 0.985);
     n.param<int>("filter", tFilter, 1);
     n.param<int>("original", tOriginal, 1);
-    
+    n.param<int>("purge", tPurge, 1);
+    n.param<int>("paso", tStep, 1);
+
     filter = static_cast<bool>(tFilter);
     original = static_cast<bool>(tOriginal);
+    purge = static_cast<bool>(tPurge);
+
+    step = static_cast<unsigned>(tStep);
     p = static_cast<unsigned>(tP);
     agents = static_cast<unsigned>(tAgents);
     islandSize = static_cast<unsigned>(tislandSize);
@@ -125,7 +134,9 @@ int main(int argc, char **argv)
             << "nndrBf -> " << nndrBf << std::endl
             << "Epipolar distance -> " << epDist << std::endl
             << "confidence probability -> " << confProb << std::endl
+            << "Step -> " << step << std::endl
             << "Filter? -> " << filter << std::endl
+            << "Purge? -> " << purge << std::endl
             << "Params imported" << std::endl;
 
   std::cout << "Importing files..." << std::endl;
@@ -133,29 +144,54 @@ int main(int argc, char **argv)
   getFilenames(datasetPad, &filenames);
 
   std::string folderName;
-  if (filter && original)
+  if (purge)
   {
-    folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/filtrados/";
-  }else if (filter && !original)
-  {
-    folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/filtradosNuevo/";
-  }else
-  {
-    folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/noFiltrados/";
+    if (filter && original)
+    {
+      folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/filtrados/";
+    }
+    else if (filter && !original)
+    {
+      folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/filtradosNuevo/";
+    }
+    else
+    {
+      folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/noFiltrados/";
+    }
   }
-  
+  else
+  {
+    if (filter && original)
+    {
+      folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/filtrados/";
+    }
+    else if (filter && !original)
+    {
+      folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/filtradosNuevo/";
+    }
+    else
+    {
+      folderName = "/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/noFiltrados/";
+    }
+  }
+
+  std::cout << "Files imported." << std::endl;
+  if (agents > filenames.size() || agents == 0 || step > agents)
+  {
+    std::cout << "You should check the number of declared agents" << std::endl;
+    return 0;
+  }
 
   boost::filesystem::path res_dir = folderName + dataSetName;
   boost::filesystem::remove_all(res_dir);
   boost::filesystem::create_directory(res_dir);
 
-  std::cout << "Files imported." << std::endl;
-  if (agents > filenames.size() || agents == 0)
-  {
-    std::cout << "You should check the number of declared agents" << std::endl;
-    return 0;
-  }
-  for (unsigned i = 1; i <= agents; i++)
+  unsigned nVisualWords[(agents / step) + 1];
+  double timeExecution[(agents / step) + 1];
+  unsigned agentsN[(agents / step) + 1];
+  unsigned countAux = 0;
+
+  for (unsigned i = 0; i <= agents; i += step)
   {
     std::vector<std::vector<int>> fResult;
     fResult.resize(filenames.size());
@@ -170,13 +206,32 @@ int main(int argc, char **argv)
     }
 
     std::cout << "Total number of images to import " << filenames.size() << std::endl;
-    obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, false);
+    obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, purge);
 
     std::cout << "Initiallizing central agents manager..." << std::endl;
-    LCDetectorMultiCentralized LCM(i, &centralOb, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb, filter, original);
 
-    std::cout << "Initialllizing agents..." << std::endl;
+    unsigned agnts;
+    if (countAux == 0)
+    {
+      agnts = 1;
+    }
+    else
+    {
+      agnts = i;
+    }
+
+    LCDetectorMultiCentralized LCM(agnts, &centralOb, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb, filter, original);
+    std::cout << "Initiallizing agents..." << std::endl;
+
+    auto start = std::chrono::steady_clock::now();
     LCM.process(filenames);
+    auto end = std::chrono::steady_clock::now();
+
+    auto diff = end - start;
+    timeExecution[countAux] = std::chrono::duration<double, std::milli>(diff).count();
+
+    nVisualWords[countAux] = centralOb.numDescriptors();
+    agentsN[countAux] = agnts;
 
     std::cout << "---" << std::endl;
     std::cout << "All images processed with " << i << " agent(s)" << std::endl;
@@ -184,7 +239,7 @@ int main(int argc, char **argv)
     std::cout << "Storing results to a file..." << std::endl
               << std::endl;
 
-    std::string pathName = folderName + dataSetName + "/" + std::to_string(i) + ".txt";
+    std::string pathName = folderName + dataSetName + "/" + std::to_string(agnts) + ".txt";
     char outputFileName[500];
     sprintf(outputFileName, "%s", pathName.c_str());
     std::ofstream outputFile(outputFileName);
@@ -199,95 +254,22 @@ int main(int argc, char **argv)
       outputFile << std::endl;
     }
     outputFile.close();
+    countAux++;
   }
-  //std::unordered_map<unsigned, std::vector<std::pair<unsigned, obindex2::ImageMatch>>> fResult;
 
-  // std::cout << fResult.size() << "---"  << std::endl;
+  std::string pathName = folderName + dataSetName + "/" + "resultadosExtra.txt";
+  char outputFileName[500];
+  sprintf(outputFileName, "%s", pathName.c_str());
+  std::ofstream outputFile(outputFileName);
 
-  // unsigned nImages = filenames.size() / agents;
-  // unsigned ii = 0;
-  // unsigned jj = 0;
-  // for (unsigned i = 0; i < fResult.size(); i++)
-  // {
-  //   cv::namedWindow(std::to_string(i), cv::WINDOW_AUTOSIZE);
-  //   cv::namedWindow(std::to_string(i) + "." + std::to_string(i), cv::WINDOW_AUTOSIZE);
-  //   for (unsigned j = 0; j < fResult[i].size(); j++)
-  //   {
-  //     if (fResult[ii][jj].first == j)
-  //     {
-  //       unsigned imageTorepresent = i * nImages + j;
-  //       unsigned imageTocompare = fResult[ii][jj].second.agentId * nImages + fResult[ii][jj].second.image_id;
+  for (unsigned i = 0; i < (1 + (agents / step)); i++)
+  {
+    outputFile << agentsN[i] << "\t";
+    outputFile << nVisualWords[i] << "\t";
+    outputFile << timeExecution[i] << "\t";
+    outputFile << std::endl;
+  }
+  outputFile.close();
 
-  //       std::cout << "Image " << imageTorepresent << " could close " << imageTocompare << std::endl
-  //                 << "---" << std::endl;
-  //       cv::Mat imgTreps = cv::imread(filenames[imageTorepresent]);
-  //       cv::Mat imgTocmp = cv::imread(filenames[imageTocompare]);
-  //       imshow(std::to_string(i), imgTreps);
-  //       cv::waitKey(5);
-  //       imshow(std::to_string(i) + "." + std::to_string(i), imgTocmp);
-  //       cv::waitKey(0);
-  //       jj++;
-  //     }
-  //     else
-  //     {
-  //       std::cout << "Image " << i * nImages + j << " unable to match" << std::endl
-  //                 << "---" << std::endl;
-  //     }
-  //   }
-  //   ii++;
-  //   cv::destroyAllWindows();
-  // }
-
-  /************************Previous Code************************/
-  // unsigned aux = 0;
-  // std::vector<boost::thread *> agentObjects;
-  // std::vector<std::pair<unsigned, cv::Mat>> outP;
-  // // std::vector<cv::Mat> outP;
-  // boost::mutex locker;
-  // for (unsigned i = 0; i < agents; i++)
-  // {
-  //   std::vector<std::string> fiAgent;
-  //   for (unsigned f = 0; f < imagesPerAgent; f++)
-  //   {
-  //     fiAgent.push_back(filenames[aux]);
-  //     aux++;
-  //   }
-
-  //   if (i == agents - 1)
-  //   {
-  //     while (aux < nImages)
-  //     {
-  //       fiAgent.push_back(filenames[aux]);
-  //       aux++;
-  //     }
-  //   }
-
-  //   std::cout << "I'm agent " << i << " and I have to process " << fiAgent.size() << " Images" << std::endl;
-
-  //   Agent *a = new Agent(&centralOb, fiAgent, &locker, &outP, i);
-  //   boost::thread *trd = new boost::thread(&Agent::run, a);
-  //   agentObjects.push_back(trd);
-  // }
-
-  // for (unsigned i = 0; i < agentObjects.size(); i++)
-  // {
-  //   agentObjects[i]->join();
-  // }
-  /*******************Uncomment to display results*******************/
-  // for (unsigned i = 0; i < agentObjects.size(); i++)
-  // {
-  //   cv::namedWindow(std::to_string(i), cv::WINDOW_AUTOSIZE);
-  // }
-
-  // std::cout << "Displaying results..." << std::endl;
-  // for (unsigned i = 0; i < outP.size(); i++)
-  // {
-  //   cv::imshow(std::to_string(outP[i].first), outP[i].second);
-  //   cv::waitKey(5);
-  //   // usleep(5000000);
-  //   usleep(100000);
-  // }
-
-  // cv::destroyAllWindows();
   return 0;
 }

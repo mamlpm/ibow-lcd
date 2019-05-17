@@ -1,4 +1,4 @@
-function [PR] = process(directory, filesNumber, processeDataset, min_consecutive_loops, nAgents, gt_neigh, compensate)
+function [PR] = process(directory, filesNumber, processeDataset, min_consecutive_loops, nAgents, gt_neigh, compensate, stp)
 
     % Establishing default parameters
     if nargin < 6
@@ -7,9 +7,16 @@ function [PR] = process(directory, filesNumber, processeDataset, min_consecutive
     elseif nargin == 6
         compensate = false;
     end
-    for fileNumber = 1:filesNumber
+    robots = 0;
+    for fileNumber = 0:stp:filesNumber
+        
+        if fileNumber == 0
+            robots = 1;
+        else
+            robots = fileNumber;
+        end
         % Getting dataset information and loading files
-        loops_filename = strcat(directory, int2str(fileNumber), '.txt');
+        loops_filename = strcat(directory, int2str(robots), '.txt');
         loops_file = load(loops_filename);
 
         % Reading info file    
@@ -56,7 +63,7 @@ function [PR] = process(directory, filesNumber, processeDataset, min_consecutive
         I_max = 0;
         for i=1:500
             % Processing the resulting file to transform the format
-            loops_trans_file = detect_loops(loops_file, cons_loops, i, nAgents);
+            loops_trans_file = detect_loops(loops_file, cons_loops, i, robots);
             [Pr, Re] = compute_PR(loops_trans_file, gt_file, gt_neigh, compensate, false);
             P = [P, Pr];
             R = [R, Re];            
@@ -89,11 +96,11 @@ function [PR] = process(directory, filesNumber, processeDataset, min_consecutive
         R = R_a;
 
         % Returning the information for P/R
-        PR(fileNumber).P = P;
-        PR(fileNumber).R = R;
-        PR(fileNumber).P_max = P_max;
-        PR(fileNumber).R_max = R_max;
-        PR(fileNumber).I_max = I_max;
+        PR(robots).P = P;
+        PR(robots).R = R;
+        PR(robots).P_max = P_max;
+        PR(robots).R_max = R_max;
+        PR(robots).I_max = I_max;
 
         % Computing response and index size vectors
 %         curr_loops_size = size(loops_file);
