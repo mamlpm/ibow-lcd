@@ -11,6 +11,8 @@
 #include "obindex2/binary_index.h"
 #include "ibow-lcd/LCDetectorMultiCentralized.h"
 #include "ibow-lcd/Agent.h"
+#include "ibow-lcd/AgentDistributed.h"
+#include "ibow-lcd/middleLayer.h"
 
 #include <unordered_map>
 #include <boost/thread.hpp>
@@ -62,6 +64,7 @@ int main(int argc, char **argv)
   bool filter;
   bool original;
   bool purge;
+  bool distributed;
 
   if (true)
   {
@@ -73,6 +76,7 @@ int main(int argc, char **argv)
     int tOriginal;
     int tPurge;
     int tStep;
+    int tdistributed;
 
     n.param<int>("numberAgents", tAgents, 3);
     n.param<int>("p", tP, 10);
@@ -88,10 +92,12 @@ int main(int argc, char **argv)
     n.param<int>("original", tOriginal, 1);
     n.param<int>("purge", tPurge, 1);
     n.param<int>("paso", tStep, 1);
+    n.param<int>("distributed", tdistributed, 0);
 
     filter = static_cast<bool>(tFilter);
     original = static_cast<bool>(tOriginal);
     purge = static_cast<bool>(tPurge);
+    distributed = static_cast<bool>(tdistributed);
 
     step = static_cast<unsigned>(tStep);
     p = static_cast<unsigned>(tP);
@@ -182,82 +188,163 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  boost::filesystem::path res_dir = folderName + dataSetName;
-  boost::filesystem::remove_all(res_dir);
-  boost::filesystem::create_directory(res_dir);
-
   unsigned nVisualWords[(agents / step) + 1];
   double timeExecution[(agents / step) + 1];
   unsigned agentsN[(agents / step) + 1];
   unsigned countAux = 0;
 
-  for (unsigned i = 0; i <= agents; i += step)
+  if (distributed)
   {
-    std::vector<std::vector<int>> fResult;
-    fResult.resize(filenames.size());
-    std::vector<int> aux;
-    aux.push_back(-1);
-    aux.push_back(-1);
-    aux.push_back(-1);
-    aux.push_back(-1);
-    for (unsigned j = 0; j < fResult.size(); j++)
+    boost::filesystem::path res_dir = folderName + "distributed/" + dataSetName;
+    boost::filesystem::remove_all(res_dir);
+    boost::filesystem::create_directory(res_dir);
+
+    for (unsigned i = 0; i <= agents; i += step)
     {
-      fResult.at(j) = aux;
+      std::vector<std::vector<int>> fResult;
+      fResult.resize(filenames.size());
+      std::vector<int> aux;
+      aux.push_back(-1);
+      aux.push_back(-1);
+      aux.push_back(-1);
+      aux.push_back(-1);
+      for (unsigned j = 0; j < fResult.size(); j++)
+      {
+        fResult.at(j) = aux;
+      }
+
+      std::cout << "Total number of images to import " << filenames.size() << std::endl;
+
+      std::cout << "Initiallizing agents manager..." << std::endl;
+
+      unsigned agnts;
+      if (countAux == 0)
+      {
+        agnts = 1;
+      }
+      else
+      {
+        agnts = i;
+      }
+
+      middleLayer MD(agnts, purge, filter, original, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb);
+      std::cout << "Initiallizing agents..." << std::endl;
+
+      auto start = std::chrono::steady_clock::now();
+      MD.process(filenames);
+      auto end = std::chrono::steady_clock::now();
+
+      auto diff = end - start;
+      timeExecution[countAux] = std::chrono::duration<double, std::milli>(diff).count();
+
+      //nVisualWords[countAux] = centralOb.numDescriptors();
+      agentsN[countAux] = agnts;
+
+      std::cout << "---" << std::endl;
+      std::cout << "All images processed with " << i << " agent(s)" << std::endl;
+
+      std::cout << "Storing results to a file..." << std::endl
+                << std::endl;
+
+      std::string pathName = folderName + dataSetName + "/" + std::to_string(agnts) + ".txt";
+      char outputFileName[500];
+      sprintf(outputFileName, "%s", pathName.c_str());
+      std::ofstream outputFile(outputFileName);
+
+      for (unsigned j = 0; j < fResult.size(); j++)
+      {
+        //std::cout << j << " | " << fResult[j].size() << std::endl;
+        outputFile << fResult[j][0] << "\t";
+        outputFile << fResult[j][1] << "\t";
+        outputFile << fResult[j][2] << "\t";
+        outputFile << fResult[j][3] << "\t";
+        outputFile << std::endl;
+      }
+      outputFile.close();
+      countAux++;
     }
-
-    std::cout << "Total number of images to import " << filenames.size() << std::endl;
-    obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, purge);
-
-    std::cout << "Initiallizing central agents manager..." << std::endl;
-
-    unsigned agnts;
-    if (countAux == 0)
-    {
-      agnts = 1;
-    }
-    else
-    {
-      agnts = i;
-    }
-
-    LCDetectorMultiCentralized LCM(agnts, &centralOb, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb, filter, original);
-    std::cout << "Initiallizing agents..." << std::endl;
-
-    auto start = std::chrono::steady_clock::now();
-    LCM.process(filenames);
-    auto end = std::chrono::steady_clock::now();
-
-    auto diff = end - start;
-    timeExecution[countAux] = std::chrono::duration<double, std::milli>(diff).count();
-
-    nVisualWords[countAux] = centralOb.numDescriptors();
-    agentsN[countAux] = agnts;
-
-    std::cout << "---" << std::endl;
-    std::cout << "All images processed with " << i << " agent(s)" << std::endl;
-
-    std::cout << "Storing results to a file..." << std::endl
-              << std::endl;
-
-    std::string pathName = folderName + dataSetName + "/" + std::to_string(agnts) + ".txt";
-    char outputFileName[500];
-    sprintf(outputFileName, "%s", pathName.c_str());
-    std::ofstream outputFile(outputFileName);
-
-    for (unsigned j = 0; j < fResult.size(); j++)
-    {
-      //std::cout << j << " | " << fResult[j].size() << std::endl;
-      outputFile << fResult[j][0] << "\t";
-      outputFile << fResult[j][1] << "\t";
-      outputFile << fResult[j][2] << "\t";
-      outputFile << fResult[j][3] << "\t";
-      outputFile << std::endl;
-    }
-    outputFile.close();
-    countAux++;
   }
+  else
+  {
+    boost::filesystem::path res_dir = folderName + "noDistributed/" + dataSetName;
+    boost::filesystem::remove_all(res_dir);
+    boost::filesystem::create_directory(res_dir);
 
-  std::string pathName = folderName + dataSetName + "/" + "resultadosExtra.txt";
+    for (unsigned i = 0; i <= agents; i += step)
+    {
+      std::vector<std::vector<int>> fResult;
+      fResult.resize(filenames.size());
+      std::vector<int> aux;
+      aux.push_back(-1);
+      aux.push_back(-1);
+      aux.push_back(-1);
+      aux.push_back(-1);
+      for (unsigned j = 0; j < fResult.size(); j++)
+      {
+        fResult.at(j) = aux;
+      }
+
+      std::cout << "Total number of images to import " << filenames.size() << std::endl;
+      obindex2::ImageIndex centralOb(16, 150, 4, obindex2::MERGE_POLICY_NONE, purge);
+
+      std::cout << "Initiallizing central agents manager..." << std::endl;
+
+      unsigned agnts;
+      if (countAux == 0)
+      {
+        agnts = 1;
+      }
+      else
+      {
+        agnts = i;
+      }
+
+      LCDetectorMultiCentralized LCM(agnts, &centralOb, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb, filter, original);
+      std::cout << "Initiallizing agents..." << std::endl;
+
+      auto start = std::chrono::steady_clock::now();
+      LCM.process(filenames);
+      auto end = std::chrono::steady_clock::now();
+
+      auto diff = end - start;
+      timeExecution[countAux] = std::chrono::duration<double, std::milli>(diff).count();
+
+      nVisualWords[countAux] = centralOb.numDescriptors();
+      agentsN[countAux] = agnts;
+
+      std::cout << "---" << std::endl;
+      std::cout << "All images processed with " << i << " agent(s)" << std::endl;
+
+      std::cout << "Storing results to a file..." << std::endl
+                << std::endl;
+
+      std::string pathName = folderName + dataSetName + "/" + std::to_string(agnts) + ".txt";
+      char outputFileName[500];
+      sprintf(outputFileName, "%s", pathName.c_str());
+      std::ofstream outputFile(outputFileName);
+
+      for (unsigned j = 0; j < fResult.size(); j++)
+      {
+        //std::cout << j << " | " << fResult[j].size() << std::endl;
+        outputFile << fResult[j][0] << "\t";
+        outputFile << fResult[j][1] << "\t";
+        outputFile << fResult[j][2] << "\t";
+        outputFile << fResult[j][3] << "\t";
+        outputFile << std::endl;
+      }
+      outputFile.close();
+      countAux++;
+    }
+  }
+  std::string pathName;
+  if (distributed)
+  {
+    pathName = folderName + "distributed/" + dataSetName + "/" + "resultadosExtra.txt";
+  }else
+  {
+    pathName =  folderName + "noDistributed/" + dataSetName + "/" + "resultadosExtra.txt";
+  }
+  
   char outputFileName[500];
   sprintf(outputFileName, "%s", pathName.c_str());
   std::ofstream outputFile(outputFileName);

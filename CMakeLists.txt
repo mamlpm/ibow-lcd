@@ -82,7 +82,9 @@ add_executable(ibowLCD_dist
                src/mainAgent.cc
                src/Agent.cc
                include/ibow-lcd/IslanDistributed.h
-               src/LCDetectorMultiCentralized.cc)
+               src/LCDetectorMultiCentralized.cc
+               src/AgentDistributed.cc
+               src/middleLayer.cc)
 
 target_link_libraries(ibowLCD_dist 
                       ${catkin_LIBRARIES}
