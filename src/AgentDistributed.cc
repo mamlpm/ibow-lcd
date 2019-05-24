@@ -19,7 +19,8 @@ AgentDistributed::AgentDistributed(std::vector<obindex2::ImageIndex> *trees,
                                    float nndr_bf,
                                    double epDist,
                                    double confProb,
-                                   unsigned* globalImagePointer)
+                                   unsigned *globalImagePointer,
+                                   boost::mutex *locker)
 {
     agentId_ = agentId;
     nImages_ = flNames.size();
@@ -48,6 +49,7 @@ AgentDistributed::AgentDistributed(std::vector<obindex2::ImageIndex> *trees,
     epDist_ = epDist;
     confProb_ = confProb;
     globalImagePointer_ = globalImagePointer;
+    locker_ = locker;
 }
 
 unsigned AgentDistributed::getId()
@@ -71,6 +73,9 @@ void AgentDistributed::run()
         detector->compute(importedImage, kpoints, descript); //descript those key points
 
         //Cheking if there is any previous image
+        locker_->lock();
+        // std::cout << "Starting " << std::endl;
+        locker_->unlock();
         if (j == 0 || kpoints.size() == 0)
         {
             if (kpoints.size() > 0)
@@ -84,8 +89,10 @@ void AgentDistributed::run()
             }
             else
             {
+                locker_->lock();
                 std::cerr << std::endl
                           << "There are no KeyPoints found" << std::endl;
+                locker_->unlock();
             }
         }
         else
@@ -119,16 +126,6 @@ void AgentDistributed::run()
 
                 if (filter_)
                 {
-                    std::cout << "---" << std::endl
-                              << "Processing filtered images ";
-                    if (original_)
-                    {
-                        std::cout << "(Original algorithm)" << std::endl;
-                    }
-                    else
-                    {
-                        std::cout << "(New algorithm)" << std::endl;
-                    }
                     processImage(agentId_, agents_, j, gImageId_, descript, foundDescriptors, kpoints, matchedKeyPoints, 1, 1);
                 }
 
@@ -140,10 +137,9 @@ void AgentDistributed::run()
             }
             if (!filter_)
             {
-                std::cout << "---" << std::endl
-                          << "Processing non filtered images" << std::endl;
                 processImage(agentId_, agents_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 1);
             }
+            // std::cout << "keep going" << std::endl;
             prevKeyPoints_.clear();         //clean the previous key points vector
             prevKeyPoints_ = kpoints;       //fill the previous key points vector
             previousImage_ = importedImage; //update the last seen image
@@ -164,7 +160,8 @@ void AgentDistributed::processImage(unsigned agentN,
                                     bool lookForLoop,
                                     bool aImage)
 {
-    locker_.lock();
+    locker_->lock();
+    std::cout << "---" << std::endl;
     // Searching for loops
     prevDescs_->at(agentN).resize(imageId + 1);
     prevDescs_->at(agentN).at(imageId) = descs;
@@ -174,18 +171,23 @@ void AgentDistributed::processImage(unsigned agentN,
     AgentDistributedResult rslt;
     rslt.query_id = imageId;
     rslt.QagentId = agentN;
+    // std::cout << "Hola 1" << std::endl;
     if (lookForLoop)
     {
         std::vector<obindex2::ImageMatch> iMatchVect;
         for (unsigned agn = 0; agn < agents; agn++)
         {
             std::vector<std::vector<cv::DMatch>> mtchs;
+
+            // std::cout << "Hola 1.1" << std::endl;
             trees_->at(agn).searchDescriptors(descs,
-                                             &mtchs);
+                                              &mtchs);
             std::vector<cv::DMatch> usableMatches;
+            // std::cout << "Hola 1.2" << std::endl;
             filterMatches(mtchs, &usableMatches);
             std::unordered_map<unsigned, obindex2::ImageMatch> iMatch;
 
+            // std::cout << "Hola 1.3" << std::endl;
             trees_->at(agn).searchImagesRestrictive(descs, usableMatches, &iMatch, agentN, p_, imageId);
             for (auto it = iMatch.begin(); it != iMatch.end(); it++)
             {
@@ -193,8 +195,17 @@ void AgentDistributed::processImage(unsigned agentN,
             }
         }
 
+        // std::cout << "Hola 2" << std::endl;
+        std::cout << iMatchVect.size() << std::endl;
+
         std::vector<obindex2::ImageMatch> iMatchFilt;
         sort(iMatchVect.begin(), iMatchVect.end(), compareByScore);
+
+        for (unsigned vectInd = 0; vectInd < iMatchVect.size(); vectInd++)
+        {
+            std::cout << iMatchVect[vectInd].score << std::endl;
+        }
+        
         filterCandidates(iMatchVect, &iMatchFilt);
 
         std::vector<ibow_lcd::IslanDistributed> islands;
@@ -320,8 +331,8 @@ void AgentDistributed::processImage(unsigned agentN,
     {
         addImage(imageId, gImageID, agentN, stableKeyPoints, stableDescs);
     }
-    
-    locker_.unlock();
+
+    locker_->unlock();
 }
 
 void AgentDistributed::filterMatches(std::vector<std::vector<cv::DMatch>> &candidatesToFilter,
@@ -330,7 +341,8 @@ void AgentDistributed::filterMatches(std::vector<std::vector<cv::DMatch>> &candi
     filteredCandidates->clear();
     for (unsigned i = 0; i < candidatesToFilter.size(); i++)
     {
-        if (candidatesToFilter[i][0].distance < 0.8 * candidatesToFilter[i][1].distance)
+        // std::cout << "Size -> " << candidatesToFilter[i].size() << std::endl;
+        if (candidatesToFilter[i].size() == 2 && candidatesToFilter[i][0].distance < 0.8 * candidatesToFilter[i][1].distance)
         {
             filteredCandidates->push_back(candidatesToFilter[i][0]);
         }

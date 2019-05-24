@@ -34,6 +34,8 @@ public:
 
   void process(std::vector<std::string> &imageFiles);
 
+  unsigned getNumberVwords();
+
 private:
   std::vector<obindex2::ImageIndex> agenTrees_;
   boost::thread_group agentSim_;

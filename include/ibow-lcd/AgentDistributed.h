@@ -3,6 +3,7 @@
 
 #include "obindex2/binary_index.h"
 #include "ibow-lcd/IslanDistributed.h"
+#include "ibow-lcd/LCDetectorMultiCentralized.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -13,15 +14,15 @@
 #include <boost/chrono.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-enum AgentDistributedStatus
-{
-  LC_DETECTED,
-  LC_NOT_DETECTED,
-  LC_NOT_ENOUGH_IMAGES,
-  LC_NOT_ENOUGH_ISLANDS,
-  LC_NOT_ENOUGH_INLIERS,
-  LC_TRANSITION
-};
+// enum AgentDistributedStatus
+// {
+//   LC_DETECTED,
+//   LC_NOT_DETECTED,
+//   LC_NOT_ENOUGH_IMAGES,
+//   LC_NOT_ENOUGH_ISLANDS,
+//   LC_NOT_ENOUGH_INLIERS,
+//   LC_TRANSITION
+// };
 
 struct AgentDistributedResult
 {
@@ -36,7 +37,7 @@ struct AgentDistributedResult
     return status == LC_DETECTED;
   }
 
-  AgentDistributedStatus status;
+  LCDetectorMultiCentralizedStatus status;
   unsigned QagentId;
   unsigned TagentId;
   unsigned query_id;
@@ -68,7 +69,8 @@ public:
                    float nndr_bf,
                    double epDist,
                    double confProb,
-                   unsigned* globalImagePointer);
+                   unsigned* globalImagePointer,
+                   boost::mutex* locker);
 
   unsigned getId();
 
@@ -128,7 +130,7 @@ private:
   unsigned agentId_;
   unsigned nImages_;
   cv::Mat prevDescriptors_;
-  boost::mutex locker_;
+  boost::mutex* locker_;
   unsigned gImageId_;
   std::vector<unsigned> *currImPAgent_;
   bool filter_;

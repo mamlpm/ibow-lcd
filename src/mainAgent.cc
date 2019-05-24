@@ -143,6 +143,7 @@ int main(int argc, char **argv)
             << "Step -> " << step << std::endl
             << "Filter? -> " << filter << std::endl
             << "Purge? -> " << purge << std::endl
+            << "Distributed -> " << distributed << std::endl
             << "Params imported" << std::endl;
 
   std::cout << "Importing files..." << std::endl;
@@ -187,10 +188,18 @@ int main(int argc, char **argv)
     std::cout << "You should check the number of declared agents" << std::endl;
     return 0;
   }
-
-  unsigned nVisualWords[(agents / step) + 1];
-  double timeExecution[(agents / step) + 1];
-  unsigned agentsN[(agents / step) + 1];
+  unsigned indice;
+  if (step == 1)
+  {
+    indice = agents / step;
+  }
+  else
+  {
+    indice = (agents / step) + 1;
+  }
+  unsigned nVisualWords[indice];
+  double timeExecution[indice];
+  unsigned agentsN[indice];
   unsigned countAux = 0;
 
   if (distributed)
@@ -199,7 +208,7 @@ int main(int argc, char **argv)
     boost::filesystem::remove_all(res_dir);
     boost::filesystem::create_directory(res_dir);
 
-    for (unsigned i = 0; i <= agents; i += step)
+    for (unsigned agnts = 1; agnts <= agents; agnts += step)
     {
       std::vector<std::vector<int>> fResult;
       fResult.resize(filenames.size());
@@ -217,15 +226,22 @@ int main(int argc, char **argv)
 
       std::cout << "Initiallizing agents manager..." << std::endl;
 
-      unsigned agnts;
-      if (countAux == 0)
-      {
-        agnts = 1;
-      }
-      else
-      {
-        agnts = i;
-      }
+      // unsigned agnts;
+      // if (step == 1)
+      // {
+      //   agnts = i + 1;
+      // }
+      // else
+      // {
+      //   if (countAux == 0)
+      //   {
+      //     agnts = 1;
+      //   }
+      //   else
+      //   {
+      //     agnts = i;
+      //   }
+      // }
 
       middleLayer MD(agnts, purge, filter, original, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb);
       std::cout << "Initiallizing agents..." << std::endl;
@@ -237,16 +253,16 @@ int main(int argc, char **argv)
       auto diff = end - start;
       timeExecution[countAux] = std::chrono::duration<double, std::milli>(diff).count();
 
-      //nVisualWords[countAux] = centralOb.numDescriptors();
+      nVisualWords[countAux] = MD.getNumberVwords();
       agentsN[countAux] = agnts;
 
       std::cout << "---" << std::endl;
-      std::cout << "All images processed with " << i << " agent(s)" << std::endl;
+      std::cout << "All images processed with " << agnts << " agent(s)" << std::endl;
 
       std::cout << "Storing results to a file..." << std::endl
                 << std::endl;
 
-      std::string pathName = folderName + dataSetName + "/" + std::to_string(agnts) + ".txt";
+      std::string pathName = folderName + "distributed/" + dataSetName + "/" + std::to_string(agnts) + ".txt";
       char outputFileName[500];
       sprintf(outputFileName, "%s", pathName.c_str());
       std::ofstream outputFile(outputFileName);
@@ -270,7 +286,7 @@ int main(int argc, char **argv)
     boost::filesystem::remove_all(res_dir);
     boost::filesystem::create_directory(res_dir);
 
-    for (unsigned i = 0; i <= agents; i += step)
+    for (unsigned agnts = 1; agnts <= agents; agnts += step)
     {
       std::vector<std::vector<int>> fResult;
       fResult.resize(filenames.size());
@@ -289,15 +305,22 @@ int main(int argc, char **argv)
 
       std::cout << "Initiallizing central agents manager..." << std::endl;
 
-      unsigned agnts;
-      if (countAux == 0)
-      {
-        agnts = 1;
-      }
-      else
-      {
-        agnts = i;
-      }
+      // unsigned agnts;
+      // if (step == 1)
+      // {
+      //   agnts = i + 1;
+      // }
+      // else
+      // {
+      //   if (countAux == 0)
+      //   {
+      //     agnts = 1;
+      //   }
+      //   else
+      //   {
+      //     agnts = i;
+      //   }
+      // }
 
       LCDetectorMultiCentralized LCM(agnts, &centralOb, p, mScore, &fResult, islandSize, minConsecutiveLoops, minInliers, nndrBf, epDist, confProb, filter, original);
       std::cout << "Initiallizing agents..." << std::endl;
@@ -313,12 +336,12 @@ int main(int argc, char **argv)
       agentsN[countAux] = agnts;
 
       std::cout << "---" << std::endl;
-      std::cout << "All images processed with " << i << " agent(s)" << std::endl;
+      std::cout << "All images processed with " << agnts << " agent(s)" << std::endl;
 
       std::cout << "Storing results to a file..." << std::endl
                 << std::endl;
 
-      std::string pathName = folderName + dataSetName + "/" + std::to_string(agnts) + ".txt";
+      std::string pathName = folderName + "noDistributed/" + dataSetName + "/" + std::to_string(agnts) + ".txt";
       char outputFileName[500];
       sprintf(outputFileName, "%s", pathName.c_str());
       std::ofstream outputFile(outputFileName);
@@ -340,11 +363,12 @@ int main(int argc, char **argv)
   if (distributed)
   {
     pathName = folderName + "distributed/" + dataSetName + "/" + "resultadosExtra.txt";
-  }else
-  {
-    pathName =  folderName + "noDistributed/" + dataSetName + "/" + "resultadosExtra.txt";
   }
-  
+  else
+  {
+    pathName = folderName + "noDistributed/" + dataSetName + "/" + "resultadosExtra.txt";
+  }
+
   char outputFileName[500];
   sprintf(outputFileName, "%s", pathName.c_str());
   std::ofstream outputFile(outputFileName);

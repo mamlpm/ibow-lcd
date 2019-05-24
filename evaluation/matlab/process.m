@@ -9,14 +9,20 @@ function [PR] = process(directory, filesNumber, processeDataset, min_consecutive
     end
     robots = 0;
     for fileNumber = 0:stp:filesNumber
-        
-        if fileNumber == 0
-            robots = 1;
+        if stp == 1
+            if fileNumber == filesNumber
+                return
+            end
+                robots = fileNumber + 1;
         else
+            if fileNumber == 0
+            robots = 1;
+            else
             robots = fileNumber;
+            end
         end
         % Getting dataset information and loading files
-        loops_filename = strcat(directory, int2str(robots), '.txt');
+        loops_filename = strcat(directory, int2str(robots), '.txt')
         loops_file = load(loops_filename);
 
         % Reading info file    

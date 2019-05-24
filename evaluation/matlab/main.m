@@ -3,20 +3,31 @@ clear all
 close all
 filter = 1;
 original = 1;
-if filter == 1 && original == 1
-    base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/filtrados/';
-elseif filter == 1 && original == 0
-    base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/filtradosNuevo/';
+distribuido = 0;
+if distribuido
+    if filter == 1 && original == 1
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/filtrados/distributed/';
+    elseif filter == 1 && original == 0
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/filtradosNuevo/distributed/';
+    else
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/noFiltrados/distributed/';
+    end
 else
-    base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/noFiltrados/';
+    if filter == 1 && original == 1
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/filtrados/noDistributed/';
+    elseif filter == 1 && original == 0
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/filtradosNuevo/noDistributed/';
+    else
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/noFiltrados/noDistributed/';
+    end
 end
 gt_neigh = 40;
 compensate = false;
 
 % Configuring subpaths
 addpath('AcademicFigures/');
-agentsNumber = 25;
-step = 5;
+agentsNumber = 5;
+step = 1;
 
 % Obtaining CityCenter results
 curr_dir = strcat(base_dir, 'CityCentre/')
@@ -157,12 +168,22 @@ print('-depsc', strcat(base_dir, 'K5Purg'));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % print('-depsc', strcat(base_dir, 'PR_curves'));
 
-if filter == 1 && original == 1
-    base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/filtrados/';
-elseif filter == 1 && original == 0
-    base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/filtradosNuevo/';
+if distribuido
+    if filter == 1 && original == 1
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/filtrados/distributed/';
+    elseif filter == 1 && original == 0
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/filtradosNuevo/distributed/';
+    else
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/noFiltrados/distributed/';
+    end
 else
-    base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/noFiltrados/';
+    if filter == 1 && original == 1
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/filtrados/noDistributed/';
+    elseif filter == 1 && original == 0
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/filtradosNuevo/noDistributed/';
+    else
+        base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/noPurgados/noFiltrados/noDistributed/';
+    end
 end
 
 % Obtaining CityCenter results
@@ -182,12 +203,12 @@ curr_dir = strcat(base_dir, 'Lip6Out/')
 [PR_L6OnPurg] = process(curr_dir, agentsNumber, 'Lip6Out', 5, agentsNumber, gt_neigh, compensate, step);
 % imgvstime_L6O.time = smooth(imgvstime_L6O.time);
 % 
-% curr_dir = strcat(base_dir, 'KITTI00/')
-% [PR_K0] = process(curr_dir, agentsNumber, 'KITTI00', 5, agentsNumber, gt_neigh, compensate);
+curr_dir = strcat(base_dir, 'KITTI00/')
+[PR_K0] = process(curr_dir, agentsNumber, 'KITTI00', 5, agentsNumber, gt_neigh, compensate, step);
 % imgvstime_K0.time = smooth(imgvstime_K0.time);
-% 
-% curr_dir = strcat(base_dir, 'KITTI05/')
-% [PR_K5] = process(curr_dir, agentsNumber, 'KITTI05', 5, agentsNumber, gt_neigh, compensate);
+
+curr_dir = strcat(base_dir, 'KITTI05/')
+[PR_K5] = process(curr_dir, agentsNumber, 'KITTI05', 5, agentsNumber, gt_neigh, compensate, step);
 % imgvstime_K5.time = smooth(imgvstime_K5.time);
 
 % curr_dir = strcat(base_dir, 'KITTI06/');
@@ -262,19 +283,20 @@ print('-depsc', strcat(base_dir, 'CCnPurg'));
 %     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/CCnonFiltered.png');
 % end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% figure;
-% hold on;
-% PRSize = size(PR_K0);
-% 
-% for i = 1:agentsNumber
-%     plot(PR_K0(i).R, PR_K0(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
-% end
-% legend show
-% xlabel('Recall');
-% ylabel('Precision');
-% xlim([0, 1]);
-% ylim([0.4, 1.02]);
-% hold off;
+figure;
+hold on;
+PRSize = size(PR_K0);
+
+for i = 1:agentsNumber
+    plot(PR_K0(i).R, PR_K0(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
+end
+legend show
+xlabel('Recall');
+ylabel('Precision');
+xlim([0, 1]);
+ylim([0.4, 1.02]);
+hold off;
+print('-depsc', strcat(base_dir, 'K0nPurg'));
 % if filter == 1 && original == 1
 %     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K0trad.png');
 % elseif filter == 1 && original == 0
@@ -283,19 +305,20 @@ print('-depsc', strcat(base_dir, 'CCnPurg'));
 %     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K0nonFiltered.png');
 % end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% figure;
-% hold on;
-% PRSize = size(PR_K5);
-% 
-% for i = 1:agentsNumber
-%     plot(PR_K5(i).R, PR_K5(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
-% end
-% legend show
-% xlabel('Recall');
-% ylabel('Precision');
-% xlim([0, 1]);
-% ylim([0.4, 1.02]);
-% hold off;
+figure;
+hold on;
+PRSize = size(PR_K5);
+
+for i = 1:agentsNumber
+    plot(PR_K5(i).R, PR_K5(i).P, 'color', rand(1,3), 'DisplayName', num2str(i))
+end
+legend show
+xlabel('Recall');
+ylabel('Precision');
+xlim([0, 1]);
+ylim([0.4, 1.02]);
+hold off;
+print('-depsc', strcat(base_dir, 'K5Purg'));
 % if filter == 1 && original == 1
 %     saveas(gcf, '/home/mamlpm/Documentos/TrabajoFinMaster/Results/Figuras/K5trad.png');
 % elseif filter == 1 && original == 0

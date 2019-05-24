@@ -9,7 +9,7 @@
         <!-- <param name = "dataset" value = "KITTI00"/> -->
         <!-- <param name = "dataset" value = "KITTI05"/> -->
 
-        <param name = "distributed" value = "1"/>
+        <param name = "distributed" value = "0"/>
         <param name = "filter" value = "1"/>
         <param name = "original" value = "1"/>
         <param name = "purge" value = "0"/>

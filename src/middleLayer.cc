@@ -92,10 +92,21 @@ void middleLayer::process(std::vector<std::string> &imageFiles)
                                                    nndrBf_,
                                                    epDist_,
                                                    confProb_,
-                                                   globalImagePointer_);
+                                                   globalImagePointer_,
+                                                   &locker_);
 
         agentSim_.create_thread(boost::bind(&AgentDistributed::run, a));
     }
 
     agentSim_.join_all();
+}
+
+unsigned middleLayer::getNumberVwords()
+{
+    unsigned result = 0;
+    for (unsigned i = 0; i < agents_; i++)
+    {
+        result = result + agenTrees_[i].numDescriptors();
+    }
+    return result;
 }
