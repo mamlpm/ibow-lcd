@@ -171,6 +171,17 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
             unsigned best_img = island.img_id;
             unsigned bestAgentNum = island.agentId;
 
+            // We obtain the image matchings, since we need them for compute F
+            std::vector<cv::DMatch> tmatches;
+            std::vector<cv::Point2f> tquery;
+            std::vector<cv::Point2f> ttrain;
+
+            ratioMatchingBF(descs, prevDescs_[bestAgentNum][best_img], &tmatches);
+
+            convertPoints(keyPoints, prevKps_[bestAgentNum][best_img], tmatches, &tquery, &ttrain);
+
+            unsigned inliers = checkEpipolarGeometry(tquery, ttrain);
+
             // Assessing the loop
             if (consecutiveLoops_[agentN] > minConsecutiveLoops_ && overlap)
             {
@@ -179,35 +190,13 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
                 rslt.status = LC_DETECTED;
                 rslt.train_id = best_img;
                 rslt.TagentId = bestAgentNum;
-                rslt.inliers = 0;
+                rslt.inliers = inliers;
                 // Store the last result
                 lastLcResult_ = rslt;
                 consecutiveLoops_[agentN]++;
             }
             else
             {
-                // We obtain the image matchings, since we need them for compute F
-                std::vector<cv::DMatch> tmatches;
-                std::vector<cv::Point2f> tquery;
-                std::vector<cv::Point2f> ttrain;
-
-                // std::cout << "---" << std::endl << "Agent that has seen the best image " << bestAgentNum << std::endl
-                //           << "Agent that has seen the current processed image " << agentN << std::endl;
-
-                // std::cout << "Just recieved descriptors: " << descs.rows << " | " << descs.cols << std::endl
-                //           << "Previously processed descriptors: " << prevDescs_[bestAgentNum][best_img].rows << " | "
-                //           << prevDescs_[bestAgentNum][best_img].cols << std::endl;
-
-                ratioMatchingBF(descs, prevDescs_[bestAgentNum][best_img], &tmatches);
-
-                // std::cout << "Just recieved keypoints: " << keyPoints.size() << std::endl
-                //           << "Previously processed keypoints: " << prevKps_[bestAgentNum][best_img].size() << std::endl
-                //           << "Found matches processing descriptors: " << tmatches.size() << std::endl << std::endl;
-                convertPoints(keyPoints, prevKps_[bestAgentNum][best_img], tmatches, &tquery, &ttrain);
-
-                // std::cout << "Query and train points: "  << tquery.size() << " | " << ttrain.size() << std::endl << std::endl;
-                unsigned inliers = checkEpipolarGeometry(tquery, ttrain);
-
                 if (inliers > minInliers_)
                 {
                     // LOOP detected
@@ -236,7 +225,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
 
         unsigned globalQueryImage = globalImagePointer_[rslt.QagentId] + rslt.query_id;
         unsigned globalTrainImage = globalImagePointer_[rslt.TagentId] + rslt.train_id;
-        
+
         switch (rslt.status)
         {
         case LC_NOT_DETECTED:
@@ -278,7 +267,7 @@ void LCDetectorMultiCentralized::processImage(unsigned agentN,
     //     rlt.push_back(-1);
     //     fReslt_->at(globalImagePointer_[agentN] + imageId) = rlt;
     //     std::cout << globalImagePointer_[agentN] + imageId << std::endl;
-    // }    
+    // }
 
     // Adding new image to the index
     if (aImage)

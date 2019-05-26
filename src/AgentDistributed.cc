@@ -205,7 +205,7 @@ void AgentDistributed::processImage(unsigned agentN,
         {
             std::cout << iMatchVect[vectInd].score << std::endl;
         }
-        
+
         filterCandidates(iMatchVect, &iMatchFilt);
 
         std::vector<ibow_lcd::IslanDistributed> islands;
@@ -241,6 +241,17 @@ void AgentDistributed::processImage(unsigned agentN,
             unsigned best_img = island.img_id;
             unsigned bestAgentNum = island.agentId;
 
+            // We obtain the image matchings, since we need them for compute F
+            std::vector<cv::DMatch> tmatches;
+            std::vector<cv::Point2f> tquery;
+            std::vector<cv::Point2f> ttrain;
+
+            ratioMatchingBF(descs, prevDescs_->at(bestAgentNum).at(best_img), &tmatches);
+
+            convertPoints(keyPoints, prevKps_->at(bestAgentNum).at(best_img), tmatches, &tquery, &ttrain);
+
+            unsigned inliers = checkEpipolarGeometry(tquery, ttrain);
+
             // Assessing the loop
             if (consecutiveLoops_ > minConsecutiveLoops_ && overlap)
             {
@@ -248,24 +259,13 @@ void AgentDistributed::processImage(unsigned agentN,
                 rslt.status = LC_DETECTED;
                 rslt.train_id = best_img;
                 rslt.TagentId = bestAgentNum;
-                rslt.inliers = 0;
+                rslt.inliers = inliers;
                 // Store the last result
                 lastLcResult_ = rslt;
                 consecutiveLoops_++;
             }
             else
             {
-                // We obtain the image matchings, since we need them for compute F
-                std::vector<cv::DMatch> tmatches;
-                std::vector<cv::Point2f> tquery;
-                std::vector<cv::Point2f> ttrain;
-
-                ratioMatchingBF(descs, prevDescs_->at(bestAgentNum).at(best_img), &tmatches);
-
-                convertPoints(keyPoints, prevKps_->at(bestAgentNum).at(best_img), tmatches, &tquery, &ttrain);
-
-                unsigned inliers = checkEpipolarGeometry(tquery, ttrain);
-
                 if (inliers > minInliers_)
                 {
                     // LOOP detected

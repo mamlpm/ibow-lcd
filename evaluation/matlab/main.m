@@ -3,7 +3,7 @@ clear all
 close all
 filter = 1;
 original = 1;
-distribuido = 0;
+distribuido = 1;
 if distribuido
     if filter == 1 && original == 1
         base_dir = '/home/mamlpm/Documentos/TrabajoFinMaster/Results/purgados/filtrados/distributed/';
