@@ -73,9 +73,9 @@ void AgentDistributed::run()
         detector->compute(importedImage, kpoints, descript); //descript those key points
 
         //Cheking if there is any previous image
-        locker_->lock();
-        // std::cout << "Starting " << std::endl;
-        locker_->unlock();
+        // locker_->lock();
+        // // std::cout << "Starting " << std::endl;
+        // locker_->unlock();
         if (j == 0 || kpoints.size() == 0)
         {
             if (kpoints.size() > 0)
@@ -131,14 +131,14 @@ void AgentDistributed::run()
 
                 /*****************************************/
             }
-            else if (filter_ && !original_)
-            {
-                processImage(agentId_, agents_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 0);
-            }
-            if (!filter_)
-            {
-                processImage(agentId_, agents_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 1);
-            }
+            // else if (filter_ && !original_)
+            // {
+            //     processImage(agentId_, agents_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 0);
+            // }
+            // if (!filter_)
+            // {
+            //     processImage(agentId_, agents_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 1);
+            // }
             // std::cout << "keep going" << std::endl;
             prevKeyPoints_.clear();         //clean the previous key points vector
             prevKeyPoints_ = kpoints;       //fill the previous key points vector
@@ -196,15 +196,15 @@ void AgentDistributed::processImage(unsigned agentN,
         }
 
         // std::cout << "Hola 2" << std::endl;
-        std::cout << iMatchVect.size() << std::endl;
+        // std::cout << iMatchVect.size() << std::endl;
 
         std::vector<obindex2::ImageMatch> iMatchFilt;
         sort(iMatchVect.begin(), iMatchVect.end(), compareByScore);
 
-        for (unsigned vectInd = 0; vectInd < iMatchVect.size(); vectInd++)
-        {
-            std::cout << iMatchVect[vectInd].score << std::endl;
-        }
+        // for (unsigned vectInd = 0; vectInd < iMatchVect.size(); vectInd++)
+        // {
+        //     std::cout << iMatchVect[vectInd].score << std::endl;
+        // }
 
         filterCandidates(iMatchVect, &iMatchFilt);
 

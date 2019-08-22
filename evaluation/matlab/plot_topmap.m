@@ -49,7 +49,7 @@ function plot_topmap(tmap_file, coords_file, datasetname)
 %             disp(cmap(tmap(i,4) + 1, :))
 %             disp(length(tmap))
 %             disp(length(coords))
-            plot3([coords(i - 1, 1), coords(i, 1)], [coords(i - 1, 2), coords(i, 2)], [tmap(i, 4), tmap(i,4)], 'k-', 'LineWidth', 3, 'Color', cmap(tmap(i,4) + 1, :));
+            plot3([coords(i - 1, 1), coords(i, 1)], [coords(i - 1, 2), coords(i, 2)], [tmap(i, 4), tmap(i,4)], 'k-', 'LineWidth', 4, 'Color', cmap(tmap(i,4) + 1, :));
         end
         %pause(0.005);
     end

@@ -1,4 +1,4 @@
-function [PR] = process(directory, filesNumber, processeDataset, min_consecutive_loops, nAgents, gt_neigh, compensate, stp)
+function [PR] = process(directory, filesNumber, processeDataset, min_consecutive_loops, nAgents, gt_neigh, compensate, stp, fstN)
 
     % Establishing default parameters
     if nargin < 6
@@ -8,7 +8,7 @@ function [PR] = process(directory, filesNumber, processeDataset, min_consecutive
         compensate = false;
     end
     robots = 0;
-    for fileNumber = 0:stp:filesNumber
+    for fileNumber = fstN:stp:filesNumber
         if stp == 1
             if fileNumber == filesNumber
                 return

@@ -42,31 +42,68 @@ LCDetectorMultiCentralized::LCDetectorMultiCentralized(unsigned agents,
 void LCDetectorMultiCentralized::process(std::vector<std::string> &imageFiles)
 {
     totalNumberOfImages_ = imageFiles.size();
-    imagesPerAgent_ = totalNumberOfImages_ / agents_;
     unsigned firstImage[agents_];
 
-    unsigned aux = 0;
-    for (unsigned i = 0; i < agents_; i++)
+    if (original_)
     {
-        firstImage[i] = i * imagesPerAgent_;
-        std::vector<std::string> fiAgent;
-        for (unsigned f = 0; f < imagesPerAgent_; f++)
-        {
-            fiAgent.push_back(imageFiles[aux]);
-            aux++;
-        }
+        imagesPerAgent_ = totalNumberOfImages_ / agents_;
 
-        if (i == agents_ - 1)
+        unsigned aux = 0;
+        for (unsigned i = 0; i < agents_; i++)
         {
-            while (aux < totalNumberOfImages_)
+            firstImage[i] = i * imagesPerAgent_;
+            std::vector<std::string> fiAgent;
+            for (unsigned f = 0; f < imagesPerAgent_; f++)
             {
                 fiAgent.push_back(imageFiles[aux]);
                 aux++;
             }
-        }
-        filesPerAgent_.push_back(fiAgent);
 
-        std::cout << "I'm agent " << i << " and I have to process " << filesPerAgent_[i].size() << " Images" << std::endl;
+            if (i == agents_ - 1)
+            {
+                while (aux < totalNumberOfImages_)
+                {
+                    fiAgent.push_back(imageFiles[aux]);
+                    aux++;
+                }
+            }
+            filesPerAgent_.push_back(fiAgent);
+
+            std::cout << "I'm agent " << i << " and I have to process " << filesPerAgent_[i].size() << " Images" << std::endl;
+        }
+    }
+    else
+    {
+        unsigned iPa[agents_];
+        iPa[0] = totalNumberOfImages_ * 0.6;
+        iPa[1] = totalNumberOfImages_ * 0.2;
+        iPa[2] = totalNumberOfImages_ * 0.2;
+        unsigned aux = totalNumberOfImages_ - (iPa[0] + iPa[1] + iPa[2]);
+        iPa[2] = iPa[2] + aux;
+
+        aux = 0;
+        for (unsigned i = 0; i < agents_; i++)
+        {
+            firstImage[i] = aux;
+            std::vector<std::string> fiAgent;
+            for (unsigned f = 0; f < iPa[i]; f++)
+            {
+                fiAgent.push_back(imageFiles[aux]);
+                aux++;
+            }
+
+            if (i == agents_ - 1)
+            {
+                while (aux < totalNumberOfImages_)
+                {
+                    fiAgent.push_back(imageFiles[aux]);
+                    aux++;
+                }
+            }
+            filesPerAgent_.push_back(fiAgent);
+
+            std::cout << "I'm agent " << i << " and I have to process " << filesPerAgent_[i].size() << " Images" << std::endl;
+        }
     }
 
     globalImagePointer_ = firstImage;

@@ -110,7 +110,8 @@ void Agent::run()
                     if (original_)
                     {
                         std::cout << "(Original algorithm)" << std::endl;
-                    }else
+                    }
+                    else
                     {
                         std::cout << "(New algorithm)" << std::endl;
                     }
@@ -118,22 +119,22 @@ void Agent::run()
                 }
 
                 /*****************************************/
-            }else if (filter_ && !original_)
-            {
-                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 0);
+                // }else if (filter_ && !original_)
+                // {
+                //     centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 0);
+                // }
+                // if (!filter_)
+                // {
+                //     std::cout << "---" << std::endl
+                //               << "Processing non filtered images" << std::endl;
+                //     centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 1);
+                // }
+                prevKeyPoints_.clear();         //clean the previous key points vector
+                prevKeyPoints_ = kpoints;       //fill the previous key points vector
+                previousImage_ = importedImage; //update the last seen image
+                prevDescriptors_ = descript;    //Update previous seen descrpitors matrix
             }
-            if (!filter_)
-            {
-                std::cout << "---" << std::endl
-                          << "Processing non filtered images" << std::endl;
-                centr_->processImage(agentId_, j, gImageId_, descript, descript, kpoints, kpoints, 1, 1);
-            }
-            prevKeyPoints_.clear();         //clean the previous key points vector
-            prevKeyPoints_ = kpoints;       //fill the previous key points vector
-            previousImage_ = importedImage; //update the last seen image
-            prevDescriptors_ = descript;    //Update previous seen descrpitors matrix
+            gImageId_++;
         }
-        gImageId_++;
     }
-    //fRes_->insert({agentId_, res_});
 }

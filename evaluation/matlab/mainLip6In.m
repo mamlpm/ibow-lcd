@@ -2,8 +2,8 @@
 clear all
 close all
 filter = 1;
-original = 1;
-distribuido = 1;
+original = 0;
+distribuido = 0;
 
 if distribuido
     if filter == 1 && original == 1
@@ -27,11 +27,17 @@ compensate = false;
 
 % Configuring subpaths
 addpath('AcademicFigures/');
-agentsNumber = 5;
+if original
+    firstN = 0;    
+    agentsNumber = 5;
+else
+    firstN = 2;
+    agentsNumber = 3;
+end
 step = 1;
 
 curr_dir = strcat(base_dir, 'Lip6In/')
-[PR_L6IPurg] = process(curr_dir, agentsNumber, 'Lip6In', 5, agentsNumber, gt_neigh, compensate, step);
+[PR_L6IPurg] = process(curr_dir, agentsNumber, 'Lip6In', 5, agentsNumber, gt_neigh, compensate, step, firstN);
 
 
 % P/R curves
@@ -70,7 +76,7 @@ else
 end
 
 curr_dir = strcat(base_dir, 'Lip6In/')
-[PR_L6InPurg] = process(curr_dir, agentsNumber, 'Lip6In', 5, agentsNumber, gt_neigh, compensate, step);
+[PR_L6InPurg] = process(curr_dir, agentsNumber, 'Lip6In', 5, agentsNumber, gt_neigh, compensate, step, firstN);
 
 % P/R curves
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
